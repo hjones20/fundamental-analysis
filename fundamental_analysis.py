@@ -1,26 +1,42 @@
 import FundamentalAnalysis as fa
 
-
-# Show the available companies
+# Fetch the available companies
 companies = fa.available_companies()
 
-# Pull row names (tickers) from pandas DF above and cast to a list
+# Pull row names (tickers) from pandas DF returned above and cast to a list
 tickers = list(companies.index)
 
-# initialize empty sector list
-sector_companies = []
+# Initialize empty dict to store company-sector mappings
+company_sector_map = {}
 
-# TODO: Add a decorator function to show how long this function takes to return a result when called
-# subset companies by sector
-def select_sector(sector):
-    for ticker in tickers[0:200]:
+
+# Create function to perform company-sector mapping
+def sector_mapping():
+    for ticker in tickers[0:500]:
         company_profile = fa.profile(ticker)
-        if company_profile.loc['sector', 'profile'] == sector:
-            sector_companies.append(ticker)
-    return sector_companies
+        company_sector_map[ticker] = company_profile.loc['sector', 'profile']
+    return company_sector_map
 
-sector_tickers = select_sector('Technology')
+
+sector_mapping()
+
+
+# Initialize empty list to store tickers of a specific sector
+sector_tickers = []
+
+
+# Create function to subset company_sector_map to a specific sector
+def sector_selection(sector):
+    for key, value in company_sector_map.items():
+        if value == sector:
+            sector_tickers.append(key)
+    return sector_tickers
+
+
+sector_selection('Technology')
 print(sector_tickers)
+
+
 
 # ticker = 'AAPL'
 # print(fa.profile('AAPL'))
@@ -32,4 +48,3 @@ print(sector_tickers)
 # print(fa.financial_ratios(ticker))
 # print(fa.financial_statement_growth(ticker, period="annual"))
 # print(fa.profile(ticker))
-
