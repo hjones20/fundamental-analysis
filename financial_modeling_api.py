@@ -4,9 +4,9 @@ import pandas as pd
 
 
 def fetch_companies():
-    '''
-    :return: a pandas dataframe
-    '''
+    """
+    :return: a pandas df containing company name: stock ticker mappings, tickers without company names are excluded
+    """
     response = urlopen("https://financialmodelingprep.com/api/v3/company/stock/list")
     data = response.read().decode("utf-8")
     data_json = json.loads(data)['symbolsList']
