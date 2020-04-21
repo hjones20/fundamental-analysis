@@ -30,29 +30,27 @@ def fetch_companies():
 
     return complete_listings
 
-fetch_companies()
 
+def create_profile():
+    """
+    :return: a pandas df containing info necessary to conduct industry/sector-specific analyses
+    """
+    ticker_csv = pd.read_csv('ticker_company_mapping.csv', index_col=0)
 
-#
-# #ticker_csv = pd.read_csv('ticker_company_mapping.csv', index_col=0)
-# print(ticker_csv)
-#
-# company_data = []
-#
-# for ticker in ticker_csv['symbol'][0:3]:
-#     response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker)
-#     data = response.read().decode("utf-8")
-#     data_json = json.loads(data)['profile']
-#     company_data.append(data_json)
-#
-# company_df = pd.DataFrame(company_data)
-# company_df = company_df[['companyName', 'exchange', 'industry', 'website', 'description', 'ceo', 'sector']]
-#
-# # Remove rows with missing values
-# company_df = company_df.loc[company_df['companyName'] != '']
-#
-# # Merge with ticker_csv to capture ticker; join on companyName
-#
-#
-# # print(company_profile)
-# # print(len(company_profile))
+    company_data = []
+
+    for ticker in ticker_csv['symbol']:
+        response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker)
+        data = response.read().decode("utf-8")
+        data_json = json.loads(data)['profile']
+        company_data.append(data_json)
+
+    company_df = pd.DataFrame(company_data)
+    company_df = company_df[['companyName', 'exchange', 'industry', 'website', 'description', 'ceo', 'sector']]
+    company_df = company_df.set_index('companyName')
+
+    # Merge with ticker_csv to capture ticker/symbol; join on index of both dfs: companyName
+    company_profile = company_df.merge(ticker_csv, right_index=True, left_index=True, how='inner')
+    company_profile.to_csv('company_profiles.csv')
+
+    return company_profile
