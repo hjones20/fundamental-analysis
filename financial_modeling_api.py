@@ -7,9 +7,10 @@ pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
-def fetch_companies():
+def fetch_company_tickers():
     """
-    :return: a pandas df containing company name: stock ticker mappings, tickers without company names are excluded
+    :return: a pandas df containing company name: stock ticker mappings
+             note: tickers without company names are excluded
     """
     response = urlopen("https://financialmodelingprep.com/api/v3/company/stock/list")
     data = response.read().decode("utf-8")
@@ -31,7 +32,7 @@ def fetch_companies():
     return complete_listings
 
 
-def create_profile():
+def create_company_profile():
     """
     :return: a pandas df containing info necessary to conduct industry/sector-specific analyses
     """
