@@ -60,12 +60,13 @@ def get_financial_ratios(df):
         try:
             data_json = json.loads(data)['ratios']
             flattened_data = pd.json_normalize(data_json)
-            flattened_data.insert(0, 'ticker', ticker)
+            flattened_data.insert(0, 'stock.ticker', ticker)
             financial_ratios = financial_ratios.append(flattened_data, ignore_index=True)
         except KeyError:
             continue
 
-    # TODO: Remove everything before "." in all column names
+    financial_ratios.columns = financial_ratios.columns.str.split('.').str[1]
+    financial_ratios.columns.values[1] = "date"
 
     print('Found financial ratio data for ' + str(financial_ratios['ticker'].nunique()) + ' companies!')
 
@@ -73,8 +74,8 @@ def get_financial_ratios(df):
 
 
 tech_companies_test = tech_companies.iloc[0:10,]
-
 test_ratios = get_financial_ratios(tech_companies_test)
+
 
 
 # ------------------------------------------
@@ -82,27 +83,26 @@ test_ratios = get_financial_ratios(tech_companies_test)
 # ------------------------------------------
 # Filter out companies with negative GPM, OPM, or NPM in 2019
 
-# Subset df to profitability ratios we're concerned with
-subset_cols = test_ratios[['ticker', 'date', 'grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']]
-
-# Subset df to latest reported profitability ratios (annual basis)
-subset_rows = subset_cols.groupby('ticker').head(1).drop_duplicates(['ticker'])
-
-# Convert ratios values to floats instead of strings
-subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']] \
-    = subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']].apply(pd.to_numeric)
-
-# Filter out companies with negative GPM, OPM, or NPM
-keeper_stocks = subset_rows[(subset_rows['grossProfitMargin'] > 0)
-                            & (subset_rows['operatingProfitMargin'] > 0)
-                            & (subset_rows['netProfitMargin'] > 0)]
-
-print(keeper_stocks)
+# # Subset df to profitability ratios we're concerned with
+# subset_cols = test_ratios[['ticker', 'date', 'grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']]
+#
+# # Subset df to latest reported profitability ratios (annual basis)
+# subset_rows = subset_cols.groupby('ticker').head(1).drop_duplicates(['ticker'])
+#
+# # Convert ratios values to floats instead of strings
+# subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']] \
+#     = subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']].apply(pd.to_numeric)
+#
+# # Filter out companies with negative GPM, OPM, or NPM
+# keeper_stocks = subset_rows[(subset_rows['grossProfitMargin'] > 0)
+#                             & (subset_rows['operatingProfitMargin'] > 0)
+#                             & (subset_rows['netProfitMargin'] > 0)]
+#
+# print(keeper_stocks)
 
 # -----------------------------------------------
 # Filter #2: Profitability Ratio Trend
 # -----------------------------------------------
-
 
 
 # ---------------------------------
