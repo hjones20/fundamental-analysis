@@ -1,6 +1,5 @@
 from urllib.request import urlopen
 import json
-import FundamentalAnalysis as fa
 import pandas as pd
 
 # Set global printing options
@@ -15,6 +14,11 @@ company_profiles = pd.read_csv('company_profiles.csv')
 # Select your circle of competence
 # ---------------------------------
 def select_sector(df, sector):
+    """
+    :param df: takes a df containing a 'sector' column
+    :param sector: takes a string representing a sector
+    :return: a df containing only companies in the specified sector
+    """
     sector_filter = df['sector'] == sector
     sector_profiles = df[sector_filter]
     print('Found ' + str(len(sector_profiles)) + ' companies in the ' + sector + ' sector!')
@@ -25,6 +29,11 @@ tech_companies = select_sector(company_profiles, 'Technology')
 
 
 def select_industry(df, industry):
+    """
+    :param df: takes a df containing a 'industry' column
+    :param industry: takes a string representing an industry
+    :return: a df containing only companies in the specified industry
+    """
     industry_filter = df['industry'] == industry
     industry_profiles = df[industry_filter]
     print('Found ' + str(len(industry_profiles)) + ' companies in the ' + industry + ' industry!')
@@ -32,17 +41,15 @@ def select_industry(df, industry):
 
 
 # ---------------------------------
-# Filter #1: Profitability Ratios
+# Fetch Financial Ratios
 # ---------------------------------
-
 # Create function to fetch profitability ratios directly from Financial Modeling Prep API
 
 def get_financial_ratios(df):
     """
-    :param df: takes a df containing a "symbol" column as input
-    :return: returns a df of financial ratios for every symbol (stock ticker) with available data
+    :param df: takes a df containing a "symbol" (stock ticker) column as input
+    :return: a df of financial ratios for every symbol (stock ticker) with available data
     """
-
     print('Looking for financial ratios for ' + str(len(df)) + ' companies...')
     financial_ratios = pd.DataFrame()
 
@@ -63,14 +70,16 @@ def get_financial_ratios(df):
     return financial_ratios
 
 
-test = get_financial_ratios(tech_companies)
+tech_ratios = get_financial_ratios(tech_companies)
 
 
-
+# ------------------------------------------
+# Filter #1: Negative Profitability Ratios
+# ------------------------------------------
 # Filter out companies with negative GPM, OPM, or NPM in 2019
 
-# Create function to filter based on profitability ratios
-# def profitability_filter(df):
+
+# def profitability_ratio_filter(df):
 #     print('Looking for positive GPM, OPM, and NPM ratios among ' + str(len(tech_companies)) + ' companies...')
 #     positive_ratio_companies = []
 #     for ticker in df['symbol']:
@@ -86,9 +95,13 @@ test = get_financial_ratios(tech_companies)
 #     return positive_ratio_companies
 
 
+# -----------------------------------------------
+# Filter #2: Negative Profitability Ratio Trend
+# -----------------------------------------------
+
 
 
 # ---------------------------------
-# Filter #2: Earnings Manipulation
+# Filter #3: Earnings Manipulation
 # ---------------------------------
 
