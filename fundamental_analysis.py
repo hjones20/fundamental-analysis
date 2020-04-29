@@ -112,33 +112,53 @@ def get_financial_statement(df, statement, period):
     return financial_statement
 
 
-def select_last_n_years(df, most_recent_year, years_prior):
+def clean_financial_statement(df):
+    """
+    :param df: a df containing financial statement data (income, balance, or cash flow statement)
+    :return: a df with clean financial statement data (corrupted "date" rows removed, year column added)
+    """
+    print('Cleaning financial statement data for ' + str(df['symbol'].nunique()) + ' companies...')
 
     # Remove rows without full dates
-    df = df.loc[df['date'].apply(lambda x: len(x) == 10)]
+    clean_data = df.loc[df['date'].apply(lambda x: len(x) == 10)].copy()
 
     # Create year column
-    df['year'] = df['date'].str[:4].astype(int)
+    clean_data['year'] = clean_data['date'].str[:4]
 
-    # Filter data-set for last N years
-    year_filter = max(df['year']) - years_prior
-    df = df[(df['year'] >= year_filter)]
+    print('Returning clean financial statement data for ' + str(clean_data['symbol'].nunique()) + ' companies!')
 
-    # Remove tickers without recent financial reports
-    most_recent_statement = df.groupby(['symbol'])['year'].max()
-    recent_statement_filter = most_recent_statement[most_recent_statement == most_recent_year]
+    return clean_data
 
-    # Inner Join with income_statement_annual
-    clean_df = df[df['symbol'].isin(recent_statement_filter.index)]
 
-    return clean_df
+#
+#
+# def select_last_n_years(df, most_recent_year, years_prior):
+#
+#     # Remove rows without full dates
+#     df = df.loc[df['date'].apply(lambda x: len(x) == 10)]
+#
+#     # Create year column
+#     df['year'] = df['date'].str[:4].astype(int)
+#
+#     # Filter data-set for last N years
+#     year_filter = max(df['year']) - years_prior
+#     df = df[(df['year'] >= year_filter)]
+#
+#     # Remove tickers without recent financial reports
+#     most_recent_statement = df.groupby(['symbol'])['year'].max()
+#     recent_statement_filter = most_recent_statement[most_recent_statement == most_recent_year]
+#
+#     # Inner Join with income_statement_annual
+#     clean_df = df[df['symbol'].isin(recent_statement_filter.index)]
+#
+#     return clean_df
 
 
 companies = pd.read_csv('company_profiles.csv')
 sector = select_sector(companies, 'Consumer Defensive')
-industry = select_industry(sector, 'Consumer Packaged Goods')
-income_statement_annual = get_financial_statement(industry, 'income-statement', 'annual')
-income_statement_clean = select_last_n_years(income_statement_annual, 2019, 5)
+ind = select_industry(sector, 'Consumer Packaged Goods')
+income_statement_annual = get_financial_statement(ind, 'income-statement', 'annual')
+income_statement_clean = clean_financial_statement(income_statement_annual)
 print(income_statement_clean)
 
 
