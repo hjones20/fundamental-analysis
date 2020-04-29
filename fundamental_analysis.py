@@ -6,13 +6,17 @@ import pandas as pd
 pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
-# Fetch the available company profiles
-company_profiles = pd.read_csv('company_profiles.csv')
+
+def filter_exchanges(df):
+    """
+    :param df: takes a df containing an 'exchange' column
+    :return: a df containing only companies listed on the specified exchanges
+    """
+    exchange_list = ['Nasdaq Global Select', 'NasdaqGS', 'Nasdaq', 'New York Stock Exchange', 'NYSE', 'NYSE American']
+    exchange_filter = df[df['exchange'].isin(exchange_list)]
+    return exchange_filter
 
 
-# ---------------------------------
-# Select your circle of competence
-# ---------------------------------
 def select_sector(df, sector):
     """
     :param df: takes a df containing a 'sector' column
@@ -24,9 +28,6 @@ def select_sector(df, sector):
     sector_profiles = df[sector_filter]
     print('Found ' + str(len(sector_profiles)) + ' companies in the ' + sector + ' sector!')
     return sector_profiles
-
-
-tech_companies = select_sector(company_profiles, 'Technology')
 
 
 def select_industry(df, industry):
@@ -41,11 +42,6 @@ def select_industry(df, industry):
     print('Found ' + str(len(industry_profiles)) + ' companies in the ' + industry + ' industry!')
     return industry_profiles
 
-
-# ---------------------------------
-# Fetch Financial Ratios
-# ---------------------------------
-# Create function to fetch profitability ratios directly from Financial Modeling Prep API
 
 def get_financial_ratios(df):
     """
@@ -75,52 +71,39 @@ def get_financial_ratios(df):
     return financial_ratios
 
 
-#tech_companies_test = tech_companies.iloc[0:10,]
-tech_ratios = get_financial_ratios(tech_companies)
 
+"""
+def filter_by_ratio(df, gpm=0.0, opm=0.0, npm=0.0, roe=0.15, cr=1.5, ic=15, cfd=0.60):
 
-# ------------------------------------------
-# Filter #1: Profitability Ratios
-# ------------------------------------------
-# Filter out companies with negative GPM, OPM, or NPM in 2019
-
-
-def filter_by_profitability(df, gross_threshold=0.0, operating_threshold=0.0, net_threshold=0.0):
-
-    print('Evaluating the profitability ratios of ' + str(df['symbol'].nunique()) + ' companies...')
+    print('Evaluating the financial ratios of ' + str(df['symbol'].nunique()) + ' companies...')
 
     # Subset df to profitability ratios we're concerned with
-    subset_cols = df[['symbol', 'date', 'grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']]
+    subset_cols = df[['symbol', 'date', 'grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin',
+                      'returnOnEquity', 'currentRatio', 'interestCoverage', 'cashFlowToDebtRatio']]
 
     # Subset df to latest reported profitability ratios (annual basis)
     subset_rows = subset_cols.groupby('symbol').head(1).drop_duplicates(['symbol'])
 
+    # TODO: Change this to use index instead on column names
     # Convert ratios values to floats instead of strings
-    subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']] \
-        = subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin']].apply(pd.to_numeric)
+    subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin', 'returnOnEquity', 'currentRatio',
+                 'interestCoverage', 'cashFlowToDebtRatio']]\
+        = subset_rows[['grossProfitMargin', 'operatingProfitMargin', 'netProfitMargin', 'returnOnEquity', 'currentRatio',
+                       'interestCoverage', 'cashFlowToDebtRatio']].apply(pd.to_numeric)
 
     # Filter out companies with negative GPM, OPM, or NPM
-    keeper_stocks = subset_rows[(subset_rows['grossProfitMargin'] > gross_threshold)
-                                & (subset_rows['operatingProfitMargin'] > operating_threshold)
-                                & (subset_rows['netProfitMargin'] > net_threshold)]
+    keeper_stocks = subset_rows[(subset_rows['grossProfitMargin'] > gpm)
+                                & (subset_rows['operatingProfitMargin'] > opm)
+                                & (subset_rows['netProfitMargin'] > npm)
+                                & (subset_rows['returnOnEquity'] > roe)
+                                & (subset_rows['currentRatio'] > cr)
+                                & (subset_rows['interestCoverage'] > ic)
+                                & (subset_rows['cashFlowToDebtRatio'] > cfd)]
 
     profitable_companies = pd.merge(left=df, right=keeper_stocks['symbol'], left_on='symbol', right_on='symbol')
 
     print('Found ' + str(profitable_companies['symbol'].nunique()) +
-          ' companies that meet your profitability threshold requirements!')
+          ' companies that meet your requirements!')
 
     return profitable_companies
-
-
-profitable_tech = filter_by_profitability(tech_ratios)
-print(profitable_tech)
-
-# -----------------------------------------------
-# Filter #2: Profitability Ratio Trend
-# -----------------------------------------------
-
-
-# ---------------------------------
-# Filter #3: Earnings Manipulation
-# ---------------------------------
-
+"""
