@@ -14,6 +14,7 @@ def filter_exchanges(df):
     """
     exchange_list = ['Nasdaq Global Select', 'NasdaqGS', 'Nasdaq', 'New York Stock Exchange', 'NYSE', 'NYSE American']
     exchange_filter = df[df['exchange'].isin(exchange_list)]
+
     return exchange_filter
 
 
@@ -24,9 +25,12 @@ def select_sector(df, sector):
     :return: a df containing only companies in the specified sector
     """
     print('Evaluating sector membership among ' + str(df['symbol'].nunique()) + ' companies...')
+
     sector_filter = df['sector'] == sector
     sector_profiles = df[sector_filter]
+
     print('Found ' + str(len(sector_profiles)) + ' companies in the ' + sector + ' sector!')
+
     return sector_profiles
 
 
@@ -37,9 +41,12 @@ def select_industry(df, industry):
     :return: a df containing only companies in the specified industry
     """
     print('Evaluating industry membership among ' + str(df['symbol'].nunique()) + ' companies...')
+
     industry_filter = df['industry'] == industry
     industry_profiles = df[industry_filter]
+
     print('Found ' + str(len(industry_profiles)) + ' companies in the ' + industry + ' industry!')
+
     return industry_profiles
 
 
@@ -49,17 +56,20 @@ def get_financial_ratios(df):
     :return: a df of financial ratios for every symbol (stock ticker) with available data
     """
     print('Pulling financial ratios for ' + str(df['symbol'].nunique()) + ' companies...')
+
     financial_ratios = pd.DataFrame()
 
     for ticker in df['symbol']:
         response = urlopen("https://financialmodelingprep.com/api/v3/financial-ratios/" + ticker)
         data = response.read().decode("utf-8")
+
         # Select stock tickers don't return any results - appears to be tickers that include a "."
         try:
             data_json = json.loads(data)['ratios']
             flattened_data = pd.json_normalize(data_json)
             flattened_data.insert(0, 'stock.symbol', ticker)
             financial_ratios = financial_ratios.append(flattened_data, ignore_index=True)
+
         except KeyError:
             continue
 
@@ -69,6 +79,38 @@ def get_financial_ratios(df):
     print('Found financial ratio data for ' + str(financial_ratios['symbol'].nunique()) + ' companies!')
 
     return financial_ratios
+
+
+def get_financial_statement(df, statement, period):
+    """
+    :param df: takes a df with a symbol (ticker) column
+    :param statement: requires one of: income-statement, balance-sheet, or cash-flow-statement
+    :param period: requires on of: annual, quarterly
+    :return: a df containing all financial statement data
+    """
+
+    print('Pulling the ' + str(statement) + ' for ' + str(df['symbol'].nunique()) + ' companies...')
+
+    financial_statement = pd.DataFrame()
+
+    for ticker in df['symbol']:
+        response = urlopen("https://financialmodelingprep.com/api/v3/financials/" + statement + "/" + ticker
+                           + "?period=" + period)
+        data = response.read().decode("utf-8")
+
+        try:
+            data_json = json.loads(data)['financials']
+            flattened_data = pd.json_normalize(data_json)
+            flattened_data.insert(0, 'symbol', ticker)
+            financial_statement = financial_statement.append(flattened_data, ignore_index=True)
+
+        except KeyError:
+            continue
+
+    print('Found a ' + str(statement) + ' for ' + str(financial_statement['symbol'].nunique()) + ' companies!')
+
+    return financial_statement
+
 
 
 
