@@ -34,6 +34,7 @@ def select_sector(df, sector):
     return sector_profiles
 
 
+# TODO: industry param needs to accept list of industry names
 def select_industry(df, industry):
     """
     :param df: takes a df containing a 'industry' column
@@ -130,36 +131,40 @@ def clean_financial_statement(df):
     return clean_data
 
 
-#
-#
-# def select_last_n_years(df, most_recent_year, years_prior):
-#
-#     # Remove rows without full dates
-#     df = df.loc[df['date'].apply(lambda x: len(x) == 10)]
-#
-#     # Create year column
-#     df['year'] = df['date'].str[:4].astype(int)
-#
-#     # Filter data-set for last N years
-#     year_filter = max(df['year']) - years_prior
-#     df = df[(df['year'] >= year_filter)]
-#
-#     # Remove tickers without recent financial reports
-#     most_recent_statement = df.groupby(['symbol'])['year'].max()
-#     recent_statement_filter = most_recent_statement[most_recent_statement == most_recent_year]
-#
-#     # Inner Join with income_statement_annual
-#     clean_df = df[df['symbol'].isin(recent_statement_filter.index)]
-#
-#     return clean_df
+def select_last_n_years(df, statement_year, eval_period):
+    """
+    :param df: takes a df with a year column
+    :param statement_year: represents most recent financial statement year (e.g., 2019) required
+    :param eval_period: represents number of years leading up to the statement year that we'd like to analyze
+    :return: a df that is a subset of the original df provided
+    """
+
+    print('Pulling data from ' + str(statement_year - eval_period) + ' to ' + str(statement_year) + ' for '
+          + str(df['symbol'].nunique()) + ' companies...')
+
+    # Remove tickers without recent financial reports
+    latest_statement = df.groupby(['symbol'])['year'].max()
+    latest_statement_filter = latest_statement[latest_statement == str(statement_year)]
+    recent_reporters = df[df['symbol'].isin(latest_statement_filter.index)]
+
+    # Filter data-set for last N years
+    year_filter = int(statement_year) - int(eval_period)
+    recent_data = recent_reporters[(recent_reporters['year'].astype(int) >= year_filter)]
+
+    print('Found data from ' + str(statement_year - eval_period) + ' to ' + str(statement_year) + ' for '
+          + str(df['symbol'].nunique()) + ' companies!')
+
+    return recent_data
 
 
 companies = pd.read_csv('company_profiles.csv')
-sector = select_sector(companies, 'Consumer Defensive')
-ind = select_industry(sector, 'Consumer Packaged Goods')
+sect = select_sector(companies, 'Consumer Defensive')
+ind = select_industry(sect, 'Consumer Packaged Goods')
 income_statement_annual = get_financial_statement(ind, 'income-statement', 'annual')
 income_statement_clean = clean_financial_statement(income_statement_annual)
-print(income_statement_clean)
+income_statement_subset = select_last_n_years(income_statement_clean, 2019, 5)
+
+
 
 
 
