@@ -50,7 +50,8 @@ def select_stock_exchanges(df):
     :return: A subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
-    print('Searching for companies listed on major stock exchanges...')
+    print('Searching for stocks listed on major exchanges among ' + str(df.symbol.nunique()) +
+          ' companies...')
 
     major_stock_exchanges = ['Nasdaq Global Select', 'NasdaqGS', 'Nasdaq',
                              'New York Stock Exchange', 'NYSE', 'NYSE American']
@@ -62,15 +63,30 @@ def select_stock_exchanges(df):
     return df
 
 
-def select_price_threshold(df, price=1.00):
-    pass
+def select_minimum_price(df, min_price=5.00):
+    """
+    Subset DataFrame to companies with a stock price greater than or equal to the minimum provided.
+
+    :param df: DataFrame containing an 'price' column
+    :param min_price: The minimum stock price the user is willing to consider
+    :return: A subset of the DataFrame provided
+    :rtype: pandas.DataFrame
+    """
+    print('Searching for stocks with a price greater than or equal to $' + str(int(min_price)) +
+          ' among ' + str(df.symbol.nunique()) + ' companies')
+
+    df = df[df['price'] >= min_price]
+
+    print('Found ' + str(df.symbol.nunique()) + ' companies that meet your price requirement!')
+
+    return df
 
 
 fmp_data = get_company_data()
 clean_data = clean_company_data(fmp_data)
 select_data = select_stock_exchanges(clean_data)
-print(select_data.head())
-
+price_data = select_minimum_price(select_data)
+print(price_data.head())
 
 # def create_company_profile(df):
 #     """
