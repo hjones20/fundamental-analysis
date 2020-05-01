@@ -29,19 +29,48 @@ def clean_company_data(df):
     """
     Remove rows with any NaN values.
 
-    :param df: DataFrame containing 'symbol', 'name', 'price', and 'exchange' columns
-    :return: A subset of the original DataFrame
+    :param df: DataFrame containing stock/company info, sourced from FinancialModelingPrep API.
+    :return: A subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
-    pass
+    print('Searching for clean data among ' + str(df.symbol.nunique()) + ' companies...')
+
+    df = df.dropna()
+
+    print('Found ' + str(df.symbol.nunique()) + ' companies with clean stock data!')
+
+    return df
 
 
 def select_stock_exchanges(df):
+    """
+    Subset DataFrame to companies listed on major stock exchanges.
+
+    :param df: DataFrame containing an 'exchange' column
+    :return: A subset of the DataFrame provided
+    :rtype: pandas.DataFrame
+    """
+    print('Searching for companies listed on major stock exchanges...')
+
+    major_stock_exchanges = ['Nasdaq Global Select', 'NasdaqGS', 'Nasdaq',
+                             'New York Stock Exchange', 'NYSE', 'NYSE American']
+
+    df = df[df['exchange'].isin(major_stock_exchanges)]
+
+    print('Found ' + str(df.symbol.nunique()) + ' companies listed on major stock exchanges!')
+
+    return df
+
+
+def select_price_threshold(df, price=1.00):
     pass
 
 
-def select_price_threshold(df, price):
-    pass
+fmp_data = get_company_data()
+clean_data = clean_company_data(fmp_data)
+select_data = select_stock_exchanges(clean_data)
+print(select_data.head())
+
 
 # def create_company_profile(df):
 #     """
