@@ -2,56 +2,72 @@ from urllib.request import urlopen
 import json
 import pandas as pd
 
-# Set global printing options
 pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
-def fetch_company_tickers():
+def get_company_data():
     """
-    :return: a pandas df containing company name: stock ticker mappings
-             note: tickers without company names are excluded
+    Retrieve all available company stocks from FinancialModelingPrep API.
+
+    :return: DataFrame containing 'symbol', 'name', 'price', and 'exchange' columns
+    :rtype: pandas.DataFrame
     """
+    print('Retrieving stock data from FinancialModelingPrep...')
+
     response = urlopen("https://financialmodelingprep.com/api/v3/company/stock/list")
     data = response.read().decode("utf-8")
     data_json = json.loads(data)['symbolsList']
+    flattened_data = pd.json_normalize(data_json)
 
-    ticker_company_map = {}
+    print('Found stock data on ' + str(flattened_data.symbol.nunique()) + ' companies!')
 
-    for company in data_json:
-        try:
-            ticker_company_map[company['name']] = company['symbol']
-        except KeyError:
-            # All elements of <list> data_json have a symbol (ticker), but not necessarily a company name
-            print('Company name does not exist for stock ticker: ' + str(company['symbol']))
-
-    available_listings = pd.DataFrame(ticker_company_map, index=["symbol"]).T.sort_index()
-    complete_listings = available_listings.drop('')
-    complete_listings.to_csv('ticker_company_mapping.csv')
-
-    return complete_listings
+    return flattened_data
 
 
-def create_company_profile():
+def clean_company_data(df):
     """
-    :return: a pandas df containing info necessary to conduct industry/sector-specific analyses
+    Remove rows with any NaN values.
+
+    :param df: DataFrame containing 'symbol', 'name', 'price', and 'exchange' columns
+    :return: A subset of the original DataFrame
+    :rtype: pandas.DataFrame
     """
-    ticker_csv = pd.read_csv('ticker_company_mapping.csv', index_col=0)
+    pass
 
-    company_data = []
 
-    for ticker in ticker_csv['symbol']:
-        response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker)
-        data = response.read().decode("utf-8")
-        data_json = json.loads(data)['profile']
-        company_data.append(data_json)
+def select_stock_exchanges(df):
+    pass
 
-    company_df = pd.DataFrame(company_data)
-    company_df = company_df[['companyName', 'exchange', 'industry', 'website', 'description', 'ceo', 'sector']]
-    company_df = company_df.set_index('companyName')
 
-    # Merge with ticker_csv to capture ticker/symbol; join on index of both dfs: companyName
-    company_profile = company_df.merge(ticker_csv, right_index=True, left_index=True, how='inner')
-    company_profile.to_csv('company_profiles.csv')
+def select_price_threshold(df, price):
+    pass
 
-    return company_profile
+# def create_company_profile(df):
+#     """
+#     Construct a company profile given a set of stock tickers.
+#
+#     Creates necessary association between stock tickers and company attributes.
+#
+#     :return: A DataFrame object containing select company attributes, joined with provided tickers
+#     :rtype: pandas.DataFrame
+#     """
+#     stock_tickers = pd.read_csv('ticker_company_mapping.csv', index_col=0)
+#
+#     company_data = []
+#
+#     for ticker in stock_tickers['symbol']:
+#         response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker)
+#         data = response.read().decode("utf-8")
+#         data_json = json.loads(data)['profile']
+#         company_data.append(data_json)
+#
+#     company_df = pd.DataFrame(company_data)
+#     company_df = company_df[['companyName', 'sector', 'industry', 'exchange', 'ceo', 'description',
+#                              'website', 'mktCap', 'volAvg', 'beta', 'price']]
+#     # company_df = company_df.set_index('companyName')
+#
+#     company_profile = company_df.merge(stock_tickers, right_index=True, left_index=True,
+#                                        how='inner')
+#
+#     return company_profile
