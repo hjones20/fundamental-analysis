@@ -7,6 +7,7 @@ pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
+# TODO: Take care of this issue in a more sustainable way
 def filter_exchanges(df):
     """
     :param df: takes a df containing an 'exchange' column
@@ -123,7 +124,7 @@ def clean_financial_statement(df):
     # Remove rows without full dates
     clean_data = df.loc[df['date'].apply(lambda x: len(x) == 10)].copy()
 
-    # Create year column
+    # Create new 'year' column from original 'date' column
     clean_data['year'] = clean_data['date'].str[:4]
 
     print('Returning clean financial statement data for ' + str(clean_data['symbol'].nunique()) + ' companies!')
@@ -131,7 +132,7 @@ def clean_financial_statement(df):
     return clean_data
 
 
-def select_last_n_years(df, statement_year, eval_period):
+def subset_financial_statement(df, statement_year, eval_period):
     """
     :param df: takes a df with a year column
     :param statement_year: represents most recent financial statement year (e.g., 2019) required
@@ -157,13 +158,52 @@ def select_last_n_years(df, statement_year, eval_period):
     return recent_data
 
 
+# get all three financial statements joined together after cleaning
+    # Necessary to calculate all of the category metrics listed below
+    # Some metrics require numbers from more than one statement
+def join_financial_statements(income_statement, balance_sheet, cash_flow_statement):
+    pass
+
+# research annual vs. quarterly reporting
+
+
+# profitability
+def calculate_profitability_metrics(df):
+    pass
+# Takes in the joined financial statements df
+# Returns a separate profitability metrics df
+
+# liquidity
+
+# solvency
+
+# cash flow
+
+# activity
+
+
+# FOR EACH COLUMN SELECTED: pivot and calculate ttm and 1, 3, 5 year growth rates and then unpivot / transpose
+def calculate_metric_growth(df):
+    pass
+# Takes in profitability metrics (or other) df
+# Returns profitability metrics df with new growth columns
+
+
+def join_metrics(profitability, liquidity, solvency, cashflow, activity):
+    pass
+
+
+def filter_companies_on_metrics(df):
+    pass
+
+
 companies = pd.read_csv('company_profiles.csv')
 sect = select_sector(companies, 'Consumer Defensive')
 ind = select_industry(sect, 'Consumer Packaged Goods')
 income_statement_annual = get_financial_statement(ind, 'income-statement', 'annual')
 income_statement_clean = clean_financial_statement(income_statement_annual)
-income_statement_subset = select_last_n_years(income_statement_clean, 2019, 5)
-
+income_statement_subset = subset_financial_statement(income_statement_clean, 2019, 5)
+print(income_statement_subset)
 
 
 
