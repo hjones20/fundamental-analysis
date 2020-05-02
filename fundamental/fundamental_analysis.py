@@ -7,18 +7,6 @@ pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
-# TODO: Take care of this issue in a more sustainable way
-def filter_exchanges(df):
-    """
-    :param df: takes a df containing an 'exchange' column
-    :return: a df containing only companies listed on the specified exchanges
-    """
-    exchange_list = ['Nasdaq Global Select', 'NasdaqGS', 'Nasdaq', 'New York Stock Exchange', 'NYSE', 'NYSE American']
-    exchange_filter = df[df['exchange'].isin(exchange_list)]
-
-    return exchange_filter
-
-
 def select_sector(df, sector):
     """
     :param df: takes a df containing a 'sector' column

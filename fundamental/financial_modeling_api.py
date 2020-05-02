@@ -112,14 +112,22 @@ def create_company_profile(df):
                                     'ceo', 'description', 'website', 'mktCap', 'volAvg', 'beta',
                                     'price']]
 
+    company_profile.to_csv('data/company_profiles.csv', index=False, header=True)
+
     print('Found ' + str(company_profile.symbol.nunique()) + ' company profiles! \n')
 
     return company_profile
 
 
-fmp_data = get_company_data()
-clean_data = clean_company_data(fmp_data)
-select_data = select_stock_exchanges(clean_data)
-price_data = select_minimum_price(select_data)
-test_dat = price_data[:5]
+def main():
+    raw_data = get_company_data()
+    clean_data = clean_company_data(raw_data)
+    exchange_filter = select_stock_exchanges(clean_data)
+    price_filter = select_minimum_price(exchange_filter)
+    profile_data = create_company_profile(price_filter[:5])
 
+    return profile_data
+
+
+if __name__ == '__main__':
+    main()
