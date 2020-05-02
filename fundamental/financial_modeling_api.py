@@ -83,6 +83,13 @@ def select_minimum_price(df, min_price=5.00):
 
 
 def create_company_profile(df):
+    """
+    Map stock tickers to company information needed for screening stocks (industry, sector, etc.).
+
+    :param df: DataFrame containing a 'symbol' column
+    :return: A new DataFrame that maps the symbol column to additional company information
+    :rtype: pandas.DataFrame
+    """
 
     print('Searching for profile data on ' + str(df.symbol.nunique()) + ' companies...')
 
@@ -115,5 +122,4 @@ clean_data = clean_company_data(fmp_data)
 select_data = select_stock_exchanges(clean_data)
 price_data = select_minimum_price(select_data)
 test_dat = price_data[:5]
-
 
