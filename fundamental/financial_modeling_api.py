@@ -124,7 +124,7 @@ def main():
     clean_data = clean_company_data(raw_data)
     exchange_filter = select_stock_exchanges(clean_data)
     price_filter = select_minimum_price(exchange_filter)
-    profile_data = create_company_profile(price_filter[:5])
+    profile_data = create_company_profile(price_filter)
 
     return profile_data
 
