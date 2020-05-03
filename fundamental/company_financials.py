@@ -20,11 +20,12 @@ def select_sector(df, sector):
     sector_filter = df['sector'] == sector
     df = df[sector_filter]
 
-    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + sector + ' sector!')
+    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + sector + ' sector! \n')
 
     return df
 
 
+# TODO: Refactor to accept multiple industries
 def select_industry(df, industry):
     """
     Remove companies not in the industries provided.
@@ -37,11 +38,12 @@ def select_industry(df, industry):
     print('Evaluating industry membership among ' + str(df['symbol'].nunique()) + ' companies...')
 
     industry_filter = df['industry'] == industry
-    industry_profiles = df[industry_filter]
+    df = df[industry_filter]
 
-    print('Found ' + str(len(industry_profiles)) + ' companies in the ' + industry + ' industry!')
+    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + industry
+          + ' industry! \n')
 
-    return industry_profiles
+    return df
 
 
 def get_financial_statement(df, statement, period):
@@ -140,8 +142,16 @@ def join_financial_statements(income_statement, balance_sheet, cash_flow_stateme
     :return: DataFrame with the three provided financial statements inner joined
     :rtype: pandas.DataFrame
     """
+    print('Joining the income, balance sheet, and cash-flow statements for ' +
+          str(income_statement.symbol.nunique()) + ' companies...')
+
     joined = income_statement.merge(balance_sheet, how='inner', on=['symbol', 'date']).merge(
         cash_flow_statement, how='inner', on=['symbol', 'date'])
+
+    print('Successfully joined financial statements for ' + str(joined.symbol.nunique())
+          + ' companies! \n')
+
+    joined.to_csv('data/company_financials.csv', index=False, header=True)
 
     return joined
 
@@ -149,11 +159,14 @@ def join_financial_statements(income_statement, balance_sheet, cash_flow_stateme
 # TODO: Refactor with a class (every company HAS an industry, sector, financial statements, etc.)
 def main():
     company_profiles = pd.read_csv('data/company_profiles.csv')
-    company_test = company_profiles.head(100)
 
-    income_statement = get_financial_statement(company_test, 'income-statement', 'annual')
-    balance_sheet = get_financial_statement(company_test, 'balance-sheet-statement', 'annual')
-    cashflow_statement = get_financial_statement(company_test, 'cash-flow-statement', 'annual')
+    sector_companies = select_sector(company_profiles, 'Consumer Defensive')
+    industry_companies = select_industry(sector_companies, 'Consumer Packaged Goods')
+
+    income_statement = get_financial_statement(industry_companies, 'income-statement', 'annual')
+    balance_sheet = get_financial_statement(industry_companies, 'balance-sheet-statement', 'annual')
+    cashflow_statement = get_financial_statement(industry_companies, 'cash-flow-statement',
+                                                 'annual')
 
     clean_income_statement = clean_financial_statement(income_statement)
     clean_balance_sheet = clean_financial_statement(balance_sheet)
@@ -165,7 +178,6 @@ def main():
 
     joined_statements = join_financial_statements(subset_income_statement, subset_balance_sheet,
                                                   subset_cashflow_statement)
-    print(joined_statements.head())
 
 
 if __name__ == '__main__':
