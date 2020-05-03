@@ -179,6 +179,8 @@ def main():
     joined_statements = join_financial_statements(subset_income_statement, subset_balance_sheet,
                                                   subset_cashflow_statement)
 
+    return joined_statements
+
 
 if __name__ == '__main__':
     main()
