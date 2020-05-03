@@ -29,7 +29,7 @@ def clean_company_data(df):
     """
     Remove rows with any NaN values.
 
-    :param df: DataFrame containing stock/company info, sourced from FinancialModelingPrep API.
+    :param df: DataFrame containing stock info on N companies
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
@@ -46,7 +46,7 @@ def select_stock_exchanges(df):
     """
     Subset DataFrame to companies listed on major stock exchanges.
 
-    :param df: DataFrame containing an 'exchange' column
+    :param df: DataFrame containing stock exchange info on N companies
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
@@ -67,8 +67,8 @@ def select_minimum_price(df, min_price=5.00):
     """
     Subset DataFrame to companies with a stock price greater than or equal to the minimum provided.
 
-    :param df: DataFrame containing an 'price' column
-    :param min_price: The minimum stock price the user is willing to consider
+    :param df: DataFrame containing recent stock price info on N companies
+    :param min_price: The minimum stock price a user is willing to consider
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
@@ -86,7 +86,7 @@ def create_company_profile(df):
     """
     Map stock tickers to company information needed for screening stocks (industry, sector, etc.).
 
-    :param df: DataFrame containing a 'symbol' column
+    :param df: DataFrame containing stock tickers (symbol) for N companies
     :return: New DataFrame that maps the symbol column to additional company information
     :rtype: pandas.DataFrame
     """

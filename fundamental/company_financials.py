@@ -6,11 +6,49 @@ pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
+def select_sector(df, sector):
+    """
+    Remove companies not in the sector provided.
+
+    :param df: DataFrame containing sector info on N companies
+    :param sector: string representing a sector (e.g., 'Consumer Defensive')
+    :return: Subset of DataFrame provided, containing companies in the specified sector
+    :rtype: pandas.DataFrame
+    """
+    print('Evaluating sector membership among ' + str(df['symbol'].nunique()) + ' companies...')
+
+    sector_filter = df['sector'] == sector
+    df = df[sector_filter]
+
+    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + sector + ' sector!')
+
+    return df
+
+
+def select_industry(df, industry):
+    """
+    Remove companies not in the industries provided.
+
+    :param df: DataFrame containing industry info on N companies
+    :param industry: string representing an industry (e.g., 'Consumer Packaged Goods')
+    :return: Subset of DataFrame provided, containing companies in the specified industry
+    :rtype: pandas.DataFrame
+    """
+    print('Evaluating industry membership among ' + str(df['symbol'].nunique()) + ' companies...')
+
+    industry_filter = df['industry'] == industry
+    industry_profiles = df[industry_filter]
+
+    print('Found ' + str(len(industry_profiles)) + ' companies in the ' + industry + ' industry!')
+
+    return industry_profiles
+
+
 def get_financial_statement(df, statement, period):
     """
     Retrieve financial statement data for all stock tickers in the provided DataFrame.
 
-    :param df: DataFrame containing a 'symbol' column
+    :param df: DataFrame containing stock tickers (symbol) for N companies
     :param statement: String 'income-statement', 'balance-sheet-statement', or 'cash-flow-statement'
     :param period: String 'annual' or 'quarter'
     :return: DataFrame containing chosen financial statement data for all years available
@@ -47,7 +85,7 @@ def clean_financial_statement(df):
     """
     Remove rows with corrupted date values, create new year column.
 
-    :param df: DataFrame containing financial statement data
+    :param df: DataFrame containing financial statement data on N companies
     :return: Subset of provided DataFrame, with the addition of a new 'year' column
     :rtype: pandas.DataFrame
     """
@@ -67,7 +105,7 @@ def select_statement_years(df, statement_year, eval_period):
     """
     Remove companies without recent financial statements, subset data to evaluation period provided.
 
-    :param df: DataFrame containing financial statement data
+    :param df: DataFrame containing financial statement data on N companies
     :param statement_year: year of most recent financial statement
     :param eval_period: number of years prior to most recent statement to be analyzed
     :return: Subset of the DataFrame provided
@@ -96,16 +134,16 @@ def join_financial_statements(income_statement, balance_sheet, cash_flow_stateme
     """
     Join financial statement data for all stock tickers provided, write to csv.
 
-    :param income_statement: DataFrame containing income statement data for N companies
-    :param balance_sheet: DataFrame containing balance sheet data for N companies
-    :param cash_flow_statement: DataFrame containing cash flow statement data for N companies
-    :return: DataFrame inner joining the three financial statements provided
+    :param income_statement: DataFrame containing income statement data on N companies
+    :param balance_sheet: DataFrame containing balance sheet data on N companies
+    :param cash_flow_statement: DataFrame containing cash flow statement data on N companies
+    :return: DataFrame with the three provided financial statements inner joined
     :rtype: pandas.DataFrame
     """
-    merged = income_statement.merge(balance_sheet, how='inner', on=['symbol', 'date']).merge(
+    joined = income_statement.merge(balance_sheet, how='inner', on=['symbol', 'date']).merge(
         cash_flow_statement, how='inner', on=['symbol', 'date'])
 
-    return merged
+    return joined
 
 
 # TODO: Refactor with a class (every company HAS an industry, sector, financial statements, etc.)
@@ -128,7 +166,6 @@ def main():
     joined_statements = join_financial_statements(subset_income_statement, subset_balance_sheet,
                                                   subset_cashflow_statement)
     print(joined_statements.head())
-    print(joined_statements.columns)
 
 
 if __name__ == '__main__':
