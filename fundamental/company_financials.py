@@ -25,23 +25,23 @@ def select_sector(df, sector):
     return df
 
 
-# TODO: Refactor to accept multiple industries
-def select_industry(df, industry):
+def select_industry(df, *args):
     """
     Remove companies not in the industries provided.
 
     :param df: DataFrame containing industry info on N companies
-    :param industry: string representing an industry (e.g., 'Consumer Packaged Goods')
+    :param args: tuple representing industries to retain for analysis
     :return: Subset of DataFrame provided, containing companies in the specified industry
     :rtype: pandas.DataFrame
     """
     print('Evaluating industry membership among ' + str(df['symbol'].nunique()) + ' companies...')
 
-    industry_filter = df['industry'] == industry
-    df = df[industry_filter]
+    industry_filter = list(args)
 
-    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + industry
-          + ' industry! \n')
+    df = df[df['industry'].isin(industry_filter)]
+
+    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + str(industry_filter)
+          + ' industries! \n')
 
     return df
 
@@ -161,7 +161,8 @@ def main():
     company_profiles = pd.read_csv('data/company_profiles.csv')
 
     sector_companies = select_sector(company_profiles, 'Consumer Defensive')
-    industry_companies = select_industry(sector_companies, 'Consumer Packaged Goods')
+    industry_companies = select_industry(sector_companies, 'Consumer Packaged Goods',
+                                         'Beverages - Non-Alcoholic')
 
     income_statement = get_financial_statement(industry_companies, 'income-statement', 'annual')
     balance_sheet = get_financial_statement(industry_companies, 'balance-sheet-statement', 'annual')
