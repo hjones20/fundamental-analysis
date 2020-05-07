@@ -25,7 +25,7 @@ def select_sector(df, sector):
     return df
 
 
-def select_industry(df, *args):
+def select_industries(df, *args):
     """
     Remove companies not in the industries provided.
 
