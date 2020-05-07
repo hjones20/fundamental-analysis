@@ -161,8 +161,8 @@ def main():
     company_profiles = pd.read_csv('data/company_profiles.csv')
 
     sector_companies = select_sector(company_profiles, 'Consumer Defensive')
-    industry_companies = select_industry(sector_companies, 'Consumer Packaged Goods',
-                                         'Beverages - Non-Alcoholic')
+    industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods',
+                                           'Beverages - Non-Alcoholic')
 
     income_statement = get_financial_statement(industry_companies, 'income-statement', 'annual')
     balance_sheet = get_financial_statement(industry_companies, 'balance-sheet-statement', 'annual')
