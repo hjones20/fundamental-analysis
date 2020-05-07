@@ -4,7 +4,7 @@ pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
-def calculate_profitability_metrics(df):
+def profitability_metrics(df):
     """
     Calculate profitability metrics for N companies.
 
@@ -12,35 +12,36 @@ def calculate_profitability_metrics(df):
     :return: DataFrame containing profitability metrics for N companies
     :rtype: pandas.DataFrame
     """
+    metrics = df[['symbol', 'date']].copy()
 
-    # EBIT Margin = Operating Profit Margin
-    data = df[['symbol', 'date', 'Gross Margin', 'EBIT Margin', 'Net Profit Margin',
-               'Operating Cash Flow']].copy()
+    metrics['Gross Profit Margin'] = df['Gross Profit'] / df['Revenue']
+    metrics['EBITDA Margin'] = df['EBITDA'] / df['Revenue']
+    metrics['Operating Profit Margin'] = df['Operating Income'] / df['Revenue']
+    metrics['Net Profit Margin'] = df['Net Income'] / df['Revenue']
 
-    data['Return on Equity'] = df['Net Income'] / df['Total shareholders equity']
-    data['Return on Assets'] = df['Net Income'] / df['Total assets']
+    metrics['COGS to Sales'] = df['Cost of Revenue'] / df['Revenue']
 
-    data['Working Capital'] = df['Total current assets'] - df['Total current liabilities']
+    metrics['SG&A to Sales'] = df['SG&A Expense'] / df['Revenue']
+    metrics['R&D to Sales'] = df['R&D Expenses'] / df['Revenue']
+    metrics['Operating Expense to Sales'] = df['Operating Expenses'] / df['Revenue']
 
-    data['Cash to Current Assets'] = df['Cash and cash equivalents'] / df['Total current assets']
-    data['Inventory to Current Assets'] = df['Inventories'] / df['Total current assets']
-    data['Receivables to Current Assets'] = df['Receivables'] / df['Total current assets']
-    data['Payables to Current Assets'] = df['Payables'] / df['Total current assets']
+    metrics['Interest Expense to Sales'] = df['Interest Expense'] / df['Revenue']
+    metrics['Income Tax to Sales'] = df['Income Tax Expense'] / df['Revenue']
 
-    data['Current Ratio'] = df['Total current assets'] / df['Total current liabilities']
-    data['Interest Coverage Ratio'] = df['EBIT'] / df['Interest Expense']
-    data['Working Capital to Debt'] = (df['Total current assets']
-                                       - df['Total current liabilities']) / \
-                                      (df['Short-term debt'] + df['Long-term debt'])
+    # metrics['Return on Equity'] = df['Net Income'] / df['Total assets'] - df['Total liabilities']
+    # metrics['Return on Assets'] = df['Net Income'] / df['Total assets']
+    # Return on Invested Capital (key metrics)
+    #
+    # metrics['Book Value'] = df['Total assets'] - df['Total liabilities']
+    # metrics['Owners Earnings or FCF'] = df['Operating Cash Flow'] - df['Capital Expenditure']
+    # metrics['FCF Margin'] = (df['Operating Cash Flow'] - df['Capital Expenditure']) /df['Revenue']
+    #
+    # metrics['Cash Flow to CAPEX Ratio'] = df['Operating Cash Flow'] / df['Capital Expenditure']
 
-    data['Free Cash Flow'] = data['Operating Cash Flow'] - df['Capital Expenditure']
-
-    data['Dividend Payout Ratio'] = df['Dividend per Share'] / df['EPS']
-
-    return data
+    return metrics
 
 
-def calculate_liquidity_metrics(df):
+def liquidity_metrics(df):
     """
     Calculate liquidity metrics for N companies.
 
@@ -48,11 +49,24 @@ def calculate_liquidity_metrics(df):
     :return: DataFrame containing liquidity metrics for N companies
     :rtype: pandas.DataFrame
     """
+    metrics = df[['symbol', 'date']].copy()
 
-    pass
+    metrics['Current Ratio'] = df['Total current assets'] / df['Total current liabilities']
+    metrics['Quick Ratio'] = (df['Cash and cash equivalents'] + df['Short-term investments']
+                              + df['Receivables']) / df['Total current liabilities']
+    metrics['Cash Ratio'] = df['Cash and cash equivalents'] / df['Total current liabilities']
+
+    # DSO = Days Sales Outstanding (key metrics)
+    # DIO = Days Inventory Outstanding (key metrics - "Days of Inventory on Hand")
+    # DPO = Days Payables Outstanding (key metrics)
+
+    # Operating Cycle = DSO + DIO (calculate from metrics above)
+    # Cash Conversion Cycle = DSO + DIO - DPO (calculate from metrics above)
+
+    return metrics
 
 
-def calculate_solvency_metrics(df):
+def solvency_metrics(df):
     """
     Calculate solvency metrics for N companies.
 
@@ -60,10 +74,18 @@ def calculate_solvency_metrics(df):
     :return: DataFrame containing solvency metrics for N companies
     :rtype: pandas.DataFrame
     """
-    pass
+    metrics = df[['symbol', 'date']].copy()
+
+    metrics['Debt Ratio'] = df['Total liabilities'] / df['Total assets']
+    metrics['Debt to Equity Ratio'] = df['Total Debt'] / df['Total shareholders equity']
+    metrics['Interest Coverage Ratio'] = df['EBIT'] / df['Interest Expense']
+    metrics['Cash Flow to Debt Ratio'] = df['Operating Cash Flow'] / df['Total Debt']
+    metrics['Working Capital to Debt Ratio'] = \
+        (df['Total current assets'] - df['Total current liabilities']) / (df['Short-term debt'] +
+                                                                          df['Long-term debt'])
 
 
-def calculate_cashflow_metrics(df):
+def cashflow_metrics(df):
     """
     Calculate cash-flow metrics for N companies.
 
@@ -71,10 +93,15 @@ def calculate_cashflow_metrics(df):
     :return: DataFrame containing cash-flow metrics for N companies
     :rtype: pandas.DataFrame
      """
-    pass
+    metrics = df[['symbol', 'date', 'Operating Cash Flow']].copy()
+
+    metrics['Operating Cash Flow Margin'] = df['Operating Cash Flow'] / df['Revenue']
+    metrics['Free Cash Flow'] = df['Operating Cash Flow'] - df['Capital Expenditure']
+
+    return metrics
 
 
-def calculate_activity_metrics(df):
+def activity_metrics(df):
     """
     Calculate activity metrics for N companies.
 
@@ -82,7 +109,13 @@ def calculate_activity_metrics(df):
     :return: DataFrame containing activity metrics for N companies
     :rtype: pandas.DataFrame
     """
-    pass
+    # Cash to Current Assets
+    # Inventory to Current Assets
+    # Accounts Receivable to Current Assets
+    # Accounts Payable to Current Assets
+
+    # SG&A as % of gross profit (less than 30% is great - consistency indicates DCA)
+    # Depreciation as % of gross profit
 
 
 def join_metrics(profitability, liquidity, solvency, cashflow, activity):
@@ -100,7 +133,7 @@ def join_metrics(profitability, liquidity, solvency, cashflow, activity):
     pass
 
 
-def calculate_metric_growth(df, period):
+def metric_growth(df, period):
     """
     Calculate period growth rates of core metrics, write to csv.
 
@@ -122,20 +155,23 @@ def calculate_metric_growth(df, period):
 def main():
     company_financials = pd.read_csv('data/company_financials.csv')
 
-    profitability_metrics = calculate_profitability_metrics(company_financials)
-    # liquidity_metrics = calculate_liquidity_metrics(company_financials)
-    # solvency_metrics = calculate_solvency_metrics(company_financials)
-    # cashflow_metrics = calculate_cashflow_metrics(company_financials)
-    # activity_metrics = calculate_activity_metrics(company_financials)
+    company_profitability = profitability_metrics(company_financials)
+    # company_liquidity = liquidity_metrics(company_financials)
+    # company_solvency = solvency_metrics(company_financials)
+    # company_cashflow = cashflow_metrics(company_financials)
+    # company_activity = activity_metrics(company_financials)
     #
-    # joined_metrics = join_metrics(profitability_metrics, liquidity_metrics, solvency_metrics,
-    #                               cashflow_metrics, activity_metrics)
+    # joined_metrics = join_metrics(company_profitability,
+    #                               company_liquidity,
+    #                               company_solvency,
+    #                               company_cashflow,
+    #                               company_activity)
     #
-    # growth_metrics = calculate_metric_growth(joined_metrics, 'annual')
+    # growth_metrics = metric_growth(joined_metrics, 'annual')
     #
     # return growth_metrics
     print(company_financials.columns)
-    print(profitability_metrics.head())
+    print(company_profitability.head(20))
 
 
 if __name__ == '__main__':
