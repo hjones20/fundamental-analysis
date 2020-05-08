@@ -46,41 +46,70 @@ def select_industries(df, *args):
     return df
 
 
-def get_financial_statement(df, statement, period):
+def get_financial_statement(df, request, period):
     """
-    Retrieve financial statement data for all stock tickers in the provided DataFrame.
+    Retrieve financial data for all stock tickers in the provided DataFrame.
 
     :param df: DataFrame containing stock tickers (symbol) for N companies
-    :param statement: String 'income-statement', 'balance-sheet-statement', or 'cash-flow-statement'
+    :param request: String representing aspect of API to query
     :param period: String 'annual' or 'quarter'
     :return: DataFrame containing chosen financial statement data for all years available
     :rtype: pandas.DataFrame
     """
+    print('Pulling ' + request + ' for ' + str(df['symbol'].nunique()) + ' companies...')
 
-    print('Pulling ' + str(statement) + ' data for ' + str(df['symbol'].nunique())
-          + ' companies...')
+    request_map = {"financials": "financials",
+                   "financial-ratios": "ratios",
+                   "enterprise-value": "enterpriseValues",
+                   "company-key-metrics": "metrics",
+                   "financial-statement-growth": "growth"}
 
-    financial_statement = pd.DataFrame()
+    value_key = request_map[request]
 
-    for ticker in df['symbol']:
-        response = urlopen("https://financialmodelingprep.com/api/v3/financials/" + statement
-                           + "/" + ticker + "?period=" + period)
-        data = response.read().decode("utf-8")
-        data_json = json.loads(data)['financials']
+    financial_statements = ['income-statement', 'balance-sheet-statement', 'cash-flow-statement']
 
-        try:
-            flattened_data = pd.json_normalize(data_json)
-            flattened_data.insert(0, 'symbol', ticker)
-            financial_statement = pd.concat([financial_statement, flattened_data],
-                                            ignore_index=True)
+    statement_data = pd.DataFrame(df['symbol'])
+    other_data = pd.DataFrame()
 
-        except KeyError:
-            continue
+    if request == 'financials':
 
-    print('Found ' + str(statement) + ' data for ' + str(financial_statement['symbol'].nunique())
-          + ' companies! \n')
+        for ticker in df['symbol']:
+            for statement in financial_statements:
+                response = urlopen("https://financialmodelingprep.com/api/v3/" + request + "/" +
+                                   statement + "/" + ticker + "?period=" + period)
+                data = response.read().decode("utf-8")
+                data_json = json.loads(data)[value_key]
 
-    return financial_statement
+                try:
+                    flattened_data = pd.json_normalize(data_json)
+                    flattened_data.insert(0, 'symbol', ticker)
+                    statement_data = statement_data.merge(flattened_data)
+
+                except KeyError:
+                    continue
+
+        statement_data.to_csv('data/financial-statement-data.csv', index=False, header=True)
+
+    else:
+
+        for ticker in df['symbol']:
+            response = urlopen("https://financialmodelingprep.com/api/v3/" + request + "/" +
+                               ticker + "?period=" + period)
+            data = response.read().decode("utf-8")
+            data_json = json.loads(data)[value_key]
+
+            try:
+                flattened_data = pd.json_normalize(data_json)
+                flattened_data.insert(0, 'symbol', ticker)
+                other_data = pd.concat([other_data, flattened_data], ignore_index=True)
+
+            except KeyError:
+                continue
+
+        filename = 'data/' + request + '.csv'
+        other_data.to_csv(filename, index=False, header=True)
+
+    return statement_data if request == 'financials' else other_data
 
 
 def clean_financial_statement(df):
@@ -185,3 +214,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
