@@ -69,12 +69,14 @@ def get_financial_data(df, request, period):
 
     financial_statements = ['income-statement', 'balance-sheet-statement', 'cash-flow-statement']
 
-    statement_data = pd.DataFrame(df['symbol'])
-    other_data = pd.DataFrame()
+    financial_data = pd.DataFrame()
 
     if request == 'financials':
 
         for ticker in df['symbol']:
+
+            statement_data = pd.DataFrame(df['symbol'])
+
             for statement in financial_statements:
                 response = urlopen("https://financialmodelingprep.com/api/v3/" + request + "/" +
                                    statement + "/" + ticker + "?period=" + period)
@@ -89,8 +91,10 @@ def get_financial_data(df, request, period):
                 except KeyError:
                     continue
 
+            financial_data = pd.concat([financial_data, statement_data], ignore_index=True)
+
         print('Found ' + period + ' financial statement data for '
-              + str(statement_data['symbol'].nunique()) + ' companies! \n')
+              + str(financial_data['symbol'].nunique()) + ' companies! \n')
 
     else:
 
@@ -103,15 +107,15 @@ def get_financial_data(df, request, period):
             try:
                 flattened_data = pd.json_normalize(data_json)
                 flattened_data.insert(0, 'symbol', ticker)
-                other_data = pd.concat([other_data, flattened_data], ignore_index=True)
+                financial_data = pd.concat([financial_data, flattened_data], ignore_index=True)
 
             except KeyError:
                 continue
 
         print('Found ' + period + ' ' + request + ' data for '
-              + str(other_data['symbol'].nunique()) + ' companies! \n')
+              + str(financial_data['symbol'].nunique()) + ' companies! \n')
 
-    return statement_data if request == 'financials' else other_data
+    return financial_data
 
 
 def clean_financial_data(df):
@@ -122,13 +126,13 @@ def clean_financial_data(df):
     :return: Subset of provided DataFrame, with the addition of a new 'year' column
     :rtype: pandas.DataFrame
     """
-    print('Cleaning financial statement data for ' + str(df['symbol'].nunique()) + ' companies...')
+    print('Cleaning financial data for ' + str(df['symbol'].nunique()) + ' companies...')
 
     df = df.loc[df['date'].apply(lambda x: len(x) == 10)].copy()
 
     df['year'] = df['date'].str[:4]
 
-    print('Returning clean financial statement data for ' + str(df['symbol'].nunique())
+    print('Returning clean financial data for ' + str(df['symbol'].nunique())
           + ' companies! \n')
 
     return df
