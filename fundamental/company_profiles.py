@@ -112,7 +112,7 @@ def create_company_profile(df):
                                     'ceo', 'description', 'website', 'mktCap', 'volAvg', 'beta',
                                     'price']]
 
-    company_profile.to_csv('data/company_profiles.csv', index=False, header=True)
+    company_profile.to_csv('data/company-profiles.csv', index=False, header=True)
 
     print('Found ' + str(company_profile.symbol.nunique()) + ' company profiles! \n')
 
