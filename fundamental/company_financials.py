@@ -46,7 +46,7 @@ def select_industries(df, *args):
     return df
 
 
-def get_financial_statement(df, request, period):
+def get_financial_data(df, request, period):
     """
     Retrieve financial data for all stock tickers in the provided DataFrame.
 
@@ -56,7 +56,8 @@ def get_financial_statement(df, request, period):
     :return: DataFrame containing chosen financial statement data for all years available
     :rtype: pandas.DataFrame
     """
-    print('Pulling ' + request + ' for ' + str(df['symbol'].nunique()) + ' companies...')
+    print('Pulling ' + period + ' ' + request + ' for ' + str(df['symbol'].nunique())
+          + ' companies...')
 
     request_map = {"financials": "financials",
                    "financial-ratios": "ratios",
@@ -88,7 +89,8 @@ def get_financial_statement(df, request, period):
                 except KeyError:
                     continue
 
-        statement_data.to_csv('data/financial-statement-data.csv', index=False, header=True)
+        print('Found ' + period + ' financial statement data for '
+              + str(statement_data['symbol'].nunique()) + ' companies! \n')
 
     else:
 
@@ -106,13 +108,13 @@ def get_financial_statement(df, request, period):
             except KeyError:
                 continue
 
-        filename = 'data/' + request + '.csv'
-        other_data.to_csv(filename, index=False, header=True)
+        print('Found ' + period + ' ' + request + ' data for '
+              + str(other_data['symbol'].nunique()) + ' companies! \n')
 
     return statement_data if request == 'financials' else other_data
 
 
-def clean_financial_statement(df):
+def clean_financial_data(df):
     """
     Remove rows with corrupted date values, create new year column.
 
@@ -132,7 +134,7 @@ def clean_financial_statement(df):
     return df
 
 
-def select_statement_years(df, statement_year, eval_period):
+def select_evaluation_years(df, statement_year, eval_period):
     """
     Remove companies without recent financial statements, subset data to evaluation period provided.
 
@@ -161,31 +163,6 @@ def select_statement_years(df, statement_year, eval_period):
     return df
 
 
-def join_financial_statements(income_statement, balance_sheet, cash_flow_statement):
-    """
-    Join financial statement data for all stock tickers provided, write to csv.
-
-    :param income_statement: DataFrame containing income statement data on N companies
-    :param balance_sheet: DataFrame containing balance sheet data on N companies
-    :param cash_flow_statement: DataFrame containing cash flow statement data on N companies
-    :return: DataFrame with the three provided financial statements inner joined
-    :rtype: pandas.DataFrame
-    """
-    print('Joining the income, balance sheet, and cash-flow statements for ' +
-          str(income_statement.symbol.nunique()) + ' companies...')
-
-    joined = income_statement.merge(balance_sheet, how='inner', on=['symbol', 'date']).merge(
-        cash_flow_statement, how='inner', on=['symbol', 'date'])
-
-    print('Successfully joined financial statements for ' + str(joined.symbol.nunique())
-          + ' companies! \n')
-
-    joined.to_csv('data/company_financials.csv', index=False, header=True)
-
-    return joined
-
-
-# TODO: Refactor with a class (every company HAS an industry, sector, financial statements, etc.)
 def main():
     company_profiles = pd.read_csv('data/company_profiles.csv')
 
@@ -193,23 +170,17 @@ def main():
     industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods',
                                            'Beverages - Non-Alcoholic')
 
-    income_statement = get_financial_statement(industry_companies, 'income-statement', 'annual')
-    balance_sheet = get_financial_statement(industry_companies, 'balance-sheet-statement', 'annual')
-    cashflow_statement = get_financial_statement(industry_companies, 'cash-flow-statement',
-                                                 'annual')
+    request_list = ['financials', 'financial-ratios', 'financial-statement-growth',
+                    'company-key-metrics', 'enterprise-value']
 
-    clean_income_statement = clean_financial_statement(income_statement)
-    clean_balance_sheet = clean_financial_statement(balance_sheet)
-    clean_cashflow_statement = clean_financial_statement(cashflow_statement)
+    for request in request_list:
+        raw_data = get_financial_data(industry_companies, request, 'annual')
+        clean_data = clean_financial_data(raw_data)
+        subset_data = select_evaluation_years(clean_data, 2019, 5)
+        filename = 'data/' + request + '.csv'
+        subset_data.to_csv(filename, index=False, header=True)
 
-    subset_income_statement = select_statement_years(clean_income_statement, 2019, 5)
-    subset_balance_sheet = select_statement_years(clean_balance_sheet, 2019, 5)
-    subset_cashflow_statement = select_statement_years(clean_cashflow_statement, 2019, 5)
-
-    joined_statements = join_financial_statements(subset_income_statement, subset_balance_sheet,
-                                                  subset_cashflow_statement)
-
-    return joined_statements
+    return None
 
 
 if __name__ == '__main__':
