@@ -53,7 +53,7 @@ def get_financial_data(df, request, period):
     :param df: DataFrame containing stock tickers (symbol) for N companies
     :param request: String representing aspect of API to query
     :param period: String 'annual' or 'quarter'
-    :return: DataFrame containing chosen financial statement data for all years available
+    :return: DataFrame containing chosen financial data for all years available
     :rtype: pandas.DataFrame
     """
     print('Pulling ' + period + ' ' + request + ' for ' + str(df['symbol'].nunique())
@@ -168,7 +168,7 @@ def select_evaluation_years(df, statement_year, eval_period):
 
 
 def main():
-    company_profiles = pd.read_csv('data/company_profiles.csv')
+    company_profiles = pd.read_csv('data/company-profiles.csv')
 
     sector_companies = select_sector(company_profiles, 'Consumer Defensive')
     industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods',
