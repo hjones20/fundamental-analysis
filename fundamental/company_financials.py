@@ -149,7 +149,7 @@ def select_analysis_years(df, report_year, eval_period):
     :rtype: pandas.DataFrame
     """
 
-    print('Pulling data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
+    print('Subsetting data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies...')
 
     latest_report = df.groupby(['symbol'])['year'].max()
@@ -161,7 +161,7 @@ def select_analysis_years(df, report_year, eval_period):
 
     df = df.drop(['year'], axis=1)
 
-    print('Found data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
+    print('Subset data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies! \n')
 
     return df
@@ -180,7 +180,7 @@ def main():
     for request in request_list:
         raw_data = get_financial_data(industry_companies, request, 'annual')
         clean_data = clean_financial_data(raw_data)
-        subset_data = select_analysis_years(clean_data, 2019, 5)
+        subset_data = select_analysis_years(clean_data, 2019, 10)
         filename = 'data/' + request + '.csv'
         subset_data.to_csv(filename, index=False, header=True)
 
