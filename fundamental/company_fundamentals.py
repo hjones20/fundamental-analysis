@@ -6,25 +6,48 @@ pd.options.display.max_rows = 100
 dat = pd.read_csv('data/company-key-metrics.csv')
 
 
-def get_trailing_twelve_months(df):
+def calculate_growth_rates(df, report_year, eval_period, *args):
     """
-    Subset DataFrame to trailing twelve months of data.
+    Calculate N year growth rates for provided metrics
 
-    :param df: DataFrame containing stock tickers (symbol) and dates for N companies
-    :return: Subset of the DataFrame provided
-    :rtype: pandas.DataFrame
+    :param df: DataFrame containing the columns specified in *args
+    :param report_year: Ending year of growth rate calculation
+    :param eval_period: Number of years to include in growth rate calculation
+    :param args: Columns that require growth rate calculations
+    :return:
     """
+
     df.sort_values(by=['symbol', 'date'], inplace=True, ascending=False)
-    df = df.groupby('symbol').nth(0)
+    df['year'] = df['date'].str[:4]
 
-    return df
+    year_filter = report_year - eval_period
+    df = df[df['year'].astype(int) >= year_filter]
+
+    company_growth_rates = pd.DataFrame()
+
+    for arg in args:
+
+        metric = df[['symbol', 'year', arg]]
+        metric = metric.pivot_table(values=arg, index='symbol', columns='year')
+
+        growth_rate = (metric.iloc[:, -1] / metric.iloc[:, 0]) - 1
+        column_name = str(eval_period) + 'Y ' + arg
+
+        company_growth_rates[column_name] = growth_rate
+
+    return company_growth_rates
 
 
+def get_growth_stability(df, *args):
+    pass
+
+
+# Change this to **kwargs: metric, value threshold
 def filter_metrics(df, threshold, *args):
     """
     Subset DataFrame to stocks with column values above the specified threshold.
 
-    :param df: DataFrame containing the column names specified in *args
+    :param df: DataFrame containing the columns specified in *args
     :param threshold: Number that each column value should exceed
     :param args: Column values to subset
     :return: Subset of the DataFrame provided
@@ -36,29 +59,5 @@ def filter_metrics(df, threshold, *args):
     return df
 
 
-def get_growth_rates(df, report_year, eval_period, *args):
-
-    df.sort_values(by=['symbol', 'date'], inplace=True, ascending=False)
-    df['year'] = df['date'].str[:4]
-
-    year_filter = report_year - eval_period
-    df = df[df['year'].astype(int) >= year_filter]
-
-    for arg in args:
-        metric = df[['symbol', 'year', arg]]
-        metric.index = metric['year']
-        print(metric.transpose())
-        # Create pivot table instead
-        # Year = cols
-        # Symbol = rows
-        # Metric = values
-
-
-def get_growth_stability(df, *args):
+def main():
     pass
-
-
-# For loop: read everything in as DataFrame with variable name matching filename
-ttm_dat = get_trailing_twelve_months(dat)
-filtered_dat = filter_metrics(ttm_dat, 0, 'ROE', 'Interest Coverage', 'Free Cash Flow per Share')
-print(get_growth_rates(dat, 2019, 5, 'ROE', 'Interest Coverage', 'Free Cash Flow per Share'))
