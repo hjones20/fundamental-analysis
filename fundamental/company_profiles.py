@@ -25,23 +25,6 @@ def get_company_data():
     return flattened_data
 
 
-def clean_company_data(df):
-    """
-    Remove rows with any NaN values.
-
-    :param df: DataFrame containing stock info on N companies
-    :return: Subset of the DataFrame provided
-    :rtype: pandas.DataFrame
-    """
-    print('Searching for clean data among ' + str(df.symbol.nunique()) + ' companies...')
-
-    df = df.dropna()
-
-    print('Found ' + str(df.symbol.nunique()) + ' companies with clean stock data! \n')
-
-    return df
-
-
 def select_stock_exchanges(df):
     """
     Subset DataFrame to companies listed on major stock exchanges.
@@ -121,7 +104,7 @@ def create_company_profile(df):
 
 def main():
     raw_data = get_company_data()
-    clean_data = clean_company_data(raw_data)
+    clean_data = raw_data.dropna()
     exchange_filter = select_stock_exchanges(clean_data)
     price_filter = select_minimum_price(exchange_filter)
     profile_data = create_company_profile(price_filter)
