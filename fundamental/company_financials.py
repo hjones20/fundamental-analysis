@@ -6,21 +6,22 @@ pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
-def select_sector(df, sector):
+def select_sector(df, *args):
     """
     Remove companies not in the sector provided.
 
     :param df: DataFrame containing sector info on N companies
-    :param sector: string representing a sector (e.g., 'Consumer Defensive')
+    :param args: tuple representing sectors to retain for analysis
     :return: Subset of DataFrame provided, containing companies in the specified sector
     :rtype: pandas.DataFrame
     """
     print('Evaluating sector membership among ' + str(df['symbol'].nunique()) + ' companies...')
 
-    sector_filter = df['sector'] == sector
-    df = df[sector_filter]
+    sector_filter = list(args)
+    df = df[df['sector'].isin(sector_filter)]
 
-    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + sector + ' sector! \n')
+    print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + str(sector_filter)
+          + ' sector! \n')
 
     return df
 
@@ -37,7 +38,6 @@ def select_industries(df, *args):
     print('Evaluating industry membership among ' + str(df['symbol'].nunique()) + ' companies...')
 
     industry_filter = list(args)
-
     df = df[df['industry'].isin(industry_filter)]
 
     print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + str(industry_filter)
@@ -173,8 +173,7 @@ def main():
     company_profiles = pd.read_csv('data/company-profiles.csv')
 
     sector_companies = select_sector(company_profiles, 'Consumer Cyclical')
-    # industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods',
-    #                                        'Beverages - Non-Alcoholic')
+    # industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods')
 
     request_list = ['financials', 'financial-ratios', 'financial-statement-growth',
                     'company-key-metrics', 'enterprise-value']
