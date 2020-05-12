@@ -81,15 +81,16 @@ def get_financial_data(df, request, period):
                 response = urlopen("https://financialmodelingprep.com/api/v3/" + request + "/" +
                                    statement + "/" + ticker + "?period=" + period)
                 data = response.read().decode("utf-8")
-                data_json = json.loads(data)[value_key]
 
                 try:
-                    flattened_data = pd.json_normalize(data_json)
-                    flattened_data.insert(0, 'symbol', ticker)
-                    statement_data = statement_data.merge(flattened_data)
+                    data_json = json.loads(data)[value_key]
 
                 except KeyError:
                     continue
+
+                flattened_data = pd.json_normalize(data_json)
+                flattened_data.insert(0, 'symbol', ticker)
+                statement_data = statement_data.merge(flattened_data)
 
             financial_data = pd.concat([financial_data, statement_data], ignore_index=True)
 
@@ -102,15 +103,16 @@ def get_financial_data(df, request, period):
             response = urlopen("https://financialmodelingprep.com/api/v3/" + request + "/" +
                                ticker + "?period=" + period)
             data = response.read().decode("utf-8")
-            data_json = json.loads(data)[value_key]
 
             try:
-                flattened_data = pd.json_normalize(data_json)
-                flattened_data.insert(0, 'symbol', ticker)
-                financial_data = pd.concat([financial_data, flattened_data], ignore_index=True)
+                data_json = json.loads(data)[value_key]
 
             except KeyError:
                 continue
+
+            flattened_data = pd.json_normalize(data_json)
+            flattened_data.insert(0, 'symbol', ticker)
+            financial_data = pd.concat([financial_data, flattened_data], ignore_index=True)
 
         print('Found ' + period + ' ' + request + ' data for '
               + str(financial_data['symbol'].nunique()) + ' companies! \n')
@@ -170,15 +172,15 @@ def select_analysis_years(df, report_year, eval_period):
 def main():
     company_profiles = pd.read_csv('data/company-profiles.csv')
 
-    sector_companies = select_sector(company_profiles, 'Consumer Defensive')
-    industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods',
-                                           'Beverages - Non-Alcoholic')
+    sector_companies = select_sector(company_profiles, 'Consumer Cyclical')
+    # industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods',
+    #                                        'Beverages - Non-Alcoholic')
 
     request_list = ['financials', 'financial-ratios', 'financial-statement-growth',
                     'company-key-metrics', 'enterprise-value']
 
     for request in request_list:
-        raw_data = get_financial_data(industry_companies, request, 'annual')
+        raw_data = get_financial_data(sector_companies, request, 'annual')
         clean_data = clean_financial_data(raw_data)
         subset_data = select_analysis_years(clean_data, 2019, 10)
         filename = 'data/' + request + '.csv'

@@ -81,15 +81,16 @@ def create_company_profile(df):
     for ticker in df['symbol']:
         response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker)
         data = response.read().decode("utf-8")
-        data_json = json.loads(data)['profile']
 
         try:
-            flattened_data = pd.json_normalize(data_json)
-            flattened_data.insert(0, 'symbol', ticker)
-            profile_data = pd.concat([profile_data, flattened_data], ignore_index=True)
+            data_json = json.loads(data)['profile']
 
         except KeyError:
             continue
+
+        flattened_data = pd.json_normalize(data_json)
+        flattened_data.insert(0, 'symbol', ticker)
+        profile_data = pd.concat([profile_data, flattened_data], ignore_index=True)
 
     company_profile = profile_data[['symbol', 'companyName', 'sector', 'industry', 'exchange',
                                     'ceo', 'description', 'website', 'mktCap', 'volAvg', 'beta',
