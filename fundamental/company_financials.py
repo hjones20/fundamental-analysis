@@ -130,9 +130,10 @@ def clean_financial_data(df):
     """
     print('Cleaning financial data for ' + str(df['symbol'].nunique()) + ' companies...')
 
+    df['date'] = df['date'].astype(str)
     df = df.loc[df['date'].apply(lambda x: len(x) == 10)].copy()
 
-    df['year'] = df['date'].str[:4]
+    df.insert(2, 'year', df['date'].str[:4])
 
     print('Returning clean financial data for ' + str(df['symbol'].nunique())
           + ' companies! \n')
@@ -161,8 +162,6 @@ def select_analysis_years(df, report_year, eval_period):
     year_filter = report_year - eval_period
     df = df[(df['year'].astype(int) >= year_filter)]
 
-    df = df.drop(['year'], axis=1)
-
     print('Subset data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies! \n')
 
@@ -173,7 +172,6 @@ def main():
     company_profiles = pd.read_csv('data/company-profiles.csv')
 
     sector_companies = select_sector(company_profiles, 'Consumer Cyclical')
-    # industry_companies = select_industries(sector_companies, 'Consumer Packaged Goods')
 
     request_list = ['financials', 'financial-ratios', 'financial-statement-growth',
                     'company-key-metrics', 'enterprise-value']
