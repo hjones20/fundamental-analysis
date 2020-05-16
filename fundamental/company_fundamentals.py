@@ -7,7 +7,8 @@ pd.options.display.max_rows = 100
 
 def prepare_data(directory):
     """
-    Load all files in the provided directory as pandas DataFrames and join data as necessary.
+    Load all files in the provided directory as pandas DataFrames and join data into one large
+    DataFrame for future analysis.
 
     :return: Master DataFrame containing all data from the listed directory
     :rtype: pandas.DataFrame
@@ -32,7 +33,10 @@ def prepare_data(directory):
             master = pd.merge(master, dataframe, on=['symbol', 'date'], how='inner')
 
     for dataframe in company_profiles:
-        master = pd.merge(master, dataframe, on='symbol', how='left')
+        try:
+            master = pd.merge(master, dataframe, on='symbol', how='left')
+        except KeyError:
+            continue
 
     return master
 
@@ -84,15 +88,11 @@ def calculate_stats(df, stat, report_year, eval_period, *args):
     return company_stats
 
 
-# Change this to **kwargs: metric, value threshold
-# Need min and max thresholds
-def screen_stocks(df, threshold, *args):
+def screen_stocks(df, **kwargs):
     """
     Subset DataFrame to stocks containing column values within the specified thresholds.
 
-    :param df: DataFrame containing the columns specified in *args
-    :param threshold: Number that each column value should exceed
-    :param args: Column values to subset
+    :param df: DataFrame containing the columns specified in key values of **kwargs
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
