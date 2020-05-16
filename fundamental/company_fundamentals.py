@@ -38,6 +38,9 @@ def prepare_data(directory):
         except KeyError:
             continue
 
+    duplicate_cols = [x for x in master if x.endswith('_x') or x.endswith('_y')]
+    master.drop(duplicate_cols, axis=1, inplace=True)
+
     return master
 
 
@@ -110,10 +113,11 @@ def main():
     data = prepare_data('data/')
 
     stats = calculate_stats(data, 'median', 2019, 2, 'Revenue', 'Net Income')
-    print(stats)
 
-    # ttm = merged[merged.year == 2019]
-    #
+    ttm = data[data.year == 2019]
+    ttm = pd.merge(ttm, stats, on=['symbol', 'year'], how='inner')
+    print(ttm)
+
     # subset = df[(df['Debt to Equity'] < 0.5)
     #             & (df['Current ratio'] > 1.5)
     #             & (df['ROE'] > 0.10)
