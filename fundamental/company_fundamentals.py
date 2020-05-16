@@ -96,16 +96,20 @@ def screen_stocks(df, **kwargs):
     Subset DataFrame to stocks containing column values within the specified thresholds.
 
     :param df: DataFrame containing the columns specified in key values of **kwargs
+    :param kwargs: xxx
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
-    for arg in args:
-        df = df[df[arg] > threshold]
+    df = df[['symbol', 'year', 'industry', 'Debt to Equity', 'Current ratio', 'ROE',
+             'Interest Coverage']]
+
+    for column, thresholds in kwargs.items():
+        df = df[(df[column] > thresholds[0]) & (df[column] < thresholds[1]) | (df[column].isnull())]
 
     return df
 
 
-def plot_performance(df, *args):
+def plot_performance(df, report_year, eval_period, *args):
     pass
 
 
@@ -116,14 +120,14 @@ def main():
 
     ttm = data[data.year == 2019]
     ttm = pd.merge(ttm, stats, on=['symbol', 'year'], how='inner')
-    print(ttm)
 
-    # subset = df[(df['Debt to Equity'] < 0.5)
-    #             & (df['Current ratio'] > 1.5)
-    #             & (df['ROE'] > 0.10)
-    #             & (df['Interest Coverage'] > 15)]
-    #
-    # print(subset.shape)
+    criteria = {'Debt to Equity': [0, 0.5],
+                'Current ratio': [1.5, 20.0],
+                'ROE': [0.10, 0.50],
+                'Interest Coverage': [15, 5000]}
+
+    qualified_stocks = screen_stocks(ttm, **criteria)
+    print(qualified_stocks)
 
 
 if __name__ == '__main__':
