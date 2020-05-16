@@ -1,12 +1,50 @@
 import pandas as pd
+import os
 
 pd.options.display.max_columns = 20
 pd.options.display.max_rows = 100
 
 
+def prepare_data(directory):
+    """
+    Load and join all files in the provided directory
+
+    :return: Master DataFrame containing all data from the listed directory
+    :rtype: pandas.DataFrame
+    """
+
+    company_financials = []
+    company_profiles = []
+
+    for file in os.listdir(directory):
+        file = pd.read_csv(directory + str(file))
+        if 'symbol' and 'date' in file.columns:
+            company_financials.append(file)
+        else:
+            company_profiles.append(file)
+
+    master = pd.DataFrame()
+
+    for dataframe in company_financials:
+        if master.empty:
+            master = dataframe
+        else:
+            master = pd.merge(master, dataframe, on=['symbol', 'date'], how='inner')
+
+    for dataframe in company_profiles:
+        master = pd.merge(master, dataframe, on='symbol', how='left')
+
+    return master
+
+
+def calculate_descriptive_stats(df, stat, report_year, eval_period, *args):
+    pass
+
+
 def calculate_growth_rates(df, report_year, eval_period, *args):
     """
-    Calculate N year growth rates for provided metrics
+    Calculate N year growth rates for provided metrics; tickers without report_year financials
+    are removed
 
     :param df: DataFrame containing the columns specified in *args
     :param report_year: Ending year of growth rate calculation
@@ -62,30 +100,37 @@ def screen_metrics(df, threshold, *args):
     return df
 
 
-def main():
-    company_profiles = pd.read_csv('data/company-profiles.csv')
-    company_financials = pd.read_csv('data/financials.csv')
-    company_key_metrics = pd.read_csv('data/company-key-metrics.csv')
-
-    company_profiles = company_profiles[['symbol', 'companyName', 'sector', 'industry',
-                                         'website']].copy()
-
-    company_financials = company_financials[['symbol', 'year', 'Gross Margin', 'EBIT Margin',
-                                             'Net Profit Margin', 'Revenue', 'Net Income', 'EPS',
-                                             'Total assets', 'Total liabilities', 'Total debt',
-                                             'Free Cash Flow', 'Dividend payments']].copy()
-
-    company_key_metrics = company_key_metrics[['symbol', 'year', 'Market Cap', 'PE ratio',
-                                               'PB ratio', 'Debt to Equity', 'Current ratio',
-                                               'Interest Coverage', 'ROE', 'ROIC',
-                                               'Days Sales Outstanding',
-                                               'Days of Inventory on Hand',
-                                               'Days Payables Outstanding']].copy()
-
-    test = calculate_growth_rates(company_financials, 2019, 10, 'Revenue', 'Net Income')
-    print(test)
-
-    # df = df[df.year == 2019]
+# def main():
+    # company_profiles = pd.read_csv('data/company-profiles.csv')
+    # company_financials = pd.read_csv('data/financials.csv')
+    # company_key_metrics = pd.read_csv('data/company-key-metrics.csv')
+    # company_financial_growth = pd.read_csv('data/financial-statement-growth.csv')
+    #
+    # profiles = company_profiles[['symbol', 'companyName', 'sector', 'industry', 'website']].copy()
+    #
+    # financials = company_financials[['symbol', 'year', 'Gross Margin', 'EBIT Margin',
+    #                                  'Net Profit Margin', 'Revenue', 'Net Income', 'EPS',
+    #                                  'Total assets', 'Total liabilities', 'Total debt',
+    #                                  'Free Cash Flow', 'Dividend payments']].copy()
+    #
+    # key_metrics = company_key_metrics[['symbol', 'year', 'Market Cap', 'PE ratio', 'PB ratio',
+    #                                    'Debt to Equity', 'Current ratio', 'Interest Coverage',
+    #                                    'ROE', 'ROIC', 'Book Value per Share',
+    #                                    'Free Cash Flow per Share', 'Shareholders Equity per Share',
+    #                                    'Days Sales Outstanding', 'Days of Inventory on Hand',
+    #                                    'Days Payables Outstanding']].copy()
+    #
+    # financial_growth = company_financial_growth[[]]
+    #
+    # merged = pd.merge(company_financials, company_key_metrics, on=['symbol', 'year'])
+    #
+    # growth_rates = calculate_growth_rates(merged, 2019, 10, 'Revenue', 'Net Income', 'EPS',
+    #                                       'Book Value per Share', 'Free Cash Flow per Share')
+    #
+    # ttm = merged[merged.year == 2019]
+    #
+    # ttm_eval = pd.merge(ttm, growth_rates, on='symbol')
+    # print(ttm_eval.head(10))
 
     # subset = df[(df['Debt to Equity'] < 0.5)
     #             & (df['Current ratio'] > 1.5)
@@ -95,5 +140,5 @@ def main():
     # print(subset.shape)
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
