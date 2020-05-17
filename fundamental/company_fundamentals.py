@@ -60,13 +60,6 @@ def calculate_stats(df, stat, report_year, eval_period, *args):
 
     df.sort_values(by=['symbol', 'year'], inplace=True, ascending=False)
 
-    for ticker in df['symbol']:
-        if df['year'][0] != report_year:
-            df = df[df.symbol != ticker]
-
-    year_filter = report_year - eval_period
-    df = df[df['year'].astype(int) >= year_filter]
-
     company_stats = pd.DataFrame()
 
     for arg in args:
@@ -96,7 +89,7 @@ def screen_stocks(df, **kwargs):
     Subset DataFrame to stocks containing column values within the specified thresholds.
 
     :param df: DataFrame containing the columns specified in key values of **kwargs
-    :param kwargs: xxx
+    :param kwargs: Dictionary containing column names as keys and min/max threshold values
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
@@ -127,7 +120,22 @@ def main():
                 'Interest Coverage': [15, 5000]}
 
     qualified_stocks = screen_stocks(ttm, **criteria)
-    print(qualified_stocks)
+
+    stock_filter = data.symbol.isin(qualified_stocks.symbol)
+    data = data[stock_filter]
+
+    min_year = 2019 - 10
+
+    test = data[data.symbol == 'DLB']
+
+    for ticker in test['symbol']:
+        if test['year'].max() != 2019 or test['year'].min() > min_year:
+            test = test[test.symbol != ticker]
+    #
+    # data = data[data['year'].astype(int) >= min_year]
+    # print(data.symbol.value_counts())
+    # print(data)
+    print(test)
 
 
 if __name__ == '__main__':
