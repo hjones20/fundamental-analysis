@@ -120,11 +120,13 @@ def get_financial_data(df, request, period):
     return financial_data
 
 
-def clean_financial_data(df):
+def clean_financial_data(df, period):
     """
-    Remove rows with corrupted date values, create new year column.
+    Remove rows with corrupted date values, create new year column, remove duplicate financial
+    reports for the provided period: annual = 1 report max or quarterly = 4 reports max.
 
     :param df: DataFrame containing financial data on N companies
+    :param period: String 'annual' or 'quarter'
     :return: Subset of provided DataFrame, with the addition of a new 'year' column
     :rtype: pandas.DataFrame
     """
@@ -134,6 +136,9 @@ def clean_financial_data(df):
     df = df.loc[df['date'].apply(lambda x: len(x) == 10)].copy()
 
     df.insert(2, 'year', df['date'].str[:4])
+    df['year'] = df.year.astype(int)
+    # Sort by new year column
+    # If period == 'annual': LOGIC, elif period == 'quarterly': LOGIC
 
     print('Returning clean financial data for ' + str(df['symbol'].nunique())
           + ' companies! \n')
@@ -143,7 +148,8 @@ def clean_financial_data(df):
 
 def select_analysis_years(df, report_year, eval_period):
     """
-    Remove companies without recent financial reports, subset data to evaluation period provided.
+    Remove companies without recent financial reports or reporting history dating back to the
+    evaluation period specified.
 
     :param df: DataFrame containing financial data on N companies
     :param report_year: year of most recent financial report
@@ -155,12 +161,13 @@ def select_analysis_years(df, report_year, eval_period):
     print('Subsetting data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies...')
 
-    latest_report = df.groupby(['symbol'])['year'].max()
-    latest_report_filter = latest_report[latest_report == str(report_year)]
-    df = df[df['symbol'].isin(latest_report_filter.index)]
+    min_year = report_year - eval_period
 
-    year_filter = report_year - eval_period
-    df = df[(df['year'].astype(int) >= year_filter)]
+    for ticker in df['symbol']:
+        if df['year'].max() != report_year or df['year'].min() > min_year:
+            df = df[df.symbol != ticker]
+
+    df = df[(df['year'].astype(int) >= min_year)]
 
     print('Subset data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies! \n')
@@ -178,7 +185,7 @@ def main():
 
     for request in request_list:
         raw_data = get_financial_data(sector_companies, request, 'annual')
-        clean_data = clean_financial_data(raw_data)
+        clean_data = clean_financial_data(raw_data, 'annual')
         subset_data = select_analysis_years(clean_data, 2019, 10)
         filename = 'data/' + request + '.csv'
         subset_data.to_csv(filename, index=False, header=True)
