@@ -120,6 +120,7 @@ def get_financial_data(df, request, period):
     return financial_data
 
 
+# TODO: Create logic to handle duplicate quarterly reports
 def clean_financial_data(df, period):
     """
     Remove rows with corrupted date values, create new year column, remove duplicate financial
@@ -137,8 +138,16 @@ def clean_financial_data(df, period):
 
     df.insert(2, 'year', df['date'].str[:4])
     df['year'] = df.year.astype(int)
-    # Sort by new year column
-    # If period == 'annual': LOGIC, elif period == 'quarterly': LOGIC
+
+    df.sort_values(by=['symbol', 'date'], inplace=True, ascending=False)
+
+    if period == 'annual':
+        df.drop_duplicates(['symbol', 'year'], keep='last', inplace=True)
+
+    elif period == 'quarter':
+        row_count = df.groupby('symbol').size()
+        if row_count[0] / 4.0 != 0:
+            print(row_count.index[0] + ' has duplicate quarterly reports')
 
     print('Returning clean financial data for ' + str(df['symbol'].nunique())
           + ' companies! \n')
@@ -148,8 +157,8 @@ def clean_financial_data(df, period):
 
 def select_analysis_years(df, report_year, eval_period):
     """
-    Remove companies without recent financial reports or reporting history dating back to the
-    evaluation period specified.
+    Remove companies without recent financial reports or financial reporting history dating
+    back to the evaluation period specified.
 
     :param df: DataFrame containing financial data on N companies
     :param report_year: year of most recent financial report
