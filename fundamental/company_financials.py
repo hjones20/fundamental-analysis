@@ -133,24 +133,20 @@ def clean_financial_data(df, period):
     """
     print('Cleaning financial data for ' + str(df['symbol'].nunique()) + ' companies...')
 
-    df['date'] = df['date'].astype(str)
-    df = df.loc[df['date'].apply(lambda x: len(x) == 10)].copy()
+    df = df.loc[df['date'].astype(str).apply(lambda x: len(x) == 10)].copy()
 
     df.insert(2, 'year', df['date'].str[:4])
     df['year'] = df.year.astype(int)
-
-    df.sort_values(by=['symbol', 'date'], inplace=True, ascending=False)
 
     if period == 'annual':
         df.drop_duplicates(['symbol', 'year'], keep='last', inplace=True)
 
     elif period == 'quarter':
         row_count = df.groupby('symbol').size()
-        if row_count[0] / 4.0 != 0:
-            print(row_count.index[0] + ' has duplicate quarterly reports')
+        if row_count[0] % 4.0 != 0:
+            print(row_count.index[0] + ' has an inaccurate number of quarterly reports')
 
-    print('Returning clean financial data for ' + str(df['symbol'].nunique())
-          + ' companies! \n')
+    print('Returning clean financial data for ' + str(df['symbol'].nunique()) + ' companies! \n')
 
     return df
 
