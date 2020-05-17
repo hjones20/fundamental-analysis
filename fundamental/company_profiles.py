@@ -107,7 +107,7 @@ def main():
     raw_data = get_company_data()
     clean_data = raw_data.dropna()
     exchange_filter = select_stock_exchanges(clean_data)
-    price_filter = select_minimum_price(exchange_filter)
+    price_filter = select_minimum_price(exchange_filter, 1.00)
     profile_data = create_company_profile(price_filter)
 
     return profile_data

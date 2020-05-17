@@ -164,10 +164,10 @@ def select_analysis_years(df, report_year, eval_period):
     min_year = report_year - eval_period
 
     for ticker in df['symbol']:
-        if df['year'].max() != report_year or df['year'].min() > min_year:
+        if df['year'].min() > min_year or df['year'].max() < report_year:
             df = df[df.symbol != ticker]
 
-    df = df[(df['year'].astype(int) >= min_year)]
+    df = df[(df['year'].astype(int) >= min_year) & (df['year'].astype(int) <= report_year)]
 
     print('Subset data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies! \n')
@@ -187,7 +187,8 @@ def main():
         raw_data = get_financial_data(sector_companies, request, 'annual')
         clean_data = clean_financial_data(raw_data, 'annual')
         subset_data = select_analysis_years(clean_data, 2019, 10)
-        filename = 'data/' + request + '.csv'
+        evaluation_period = subset_data.year.max() - subset_data.year.min()
+        filename = 'data/' + request + '-' + str(evaluation_period) + 'Y' + '.csv'
         subset_data.to_csv(filename, index=False, header=True)
 
     return None
