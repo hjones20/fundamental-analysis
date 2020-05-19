@@ -1,42 +1,41 @@
 import pandas as pd
 import os
 
-pd.options.display.max_columns = 20
-pd.options.display.max_rows = 100
+pd.set_option('display.max_rows', None)
 
 
-def prepare_data(directory):
+def prepare_data(directory, year_pattern):
     """
     Load all files in the provided directory as pandas DataFrames and join data into one large
     DataFrame for future analysis.
 
+    :param directory: Local directory where financial data resides
+    :param year_pattern: String indicating which files to pull. Example: '10Y', '5Y', '3Y', etc.
     :return: Master DataFrame containing all data from the listed directory
     :rtype: pandas.DataFrame
     """
 
-    company_financials = []
-    company_profiles = []
-
-    for file in os.listdir(directory):
-        file = pd.read_csv(directory + str(file))
-        if 'symbol' and 'date' in file.columns:
-            company_financials.append(file)
-        else:
-            company_profiles.append(file)
-
     master = pd.DataFrame()
 
-    for dataframe in company_financials:
-        if master.empty:
-            master = dataframe
-        else:
-            master = pd.merge(master, dataframe, on=['symbol', 'date'], how='inner')
+    for file in os.listdir(directory):
 
-    for dataframe in company_profiles:
-        try:
-            master = pd.merge(master, dataframe, on='symbol', how='left')
-        except KeyError:
-            continue
+        if file.endswith(year_pattern, -7, -4):
+
+            financial_data = pd.read_csv(directory + str(file))
+
+            if master.empty:
+                master = financial_data
+            else:
+                master = pd.merge(master, financial_data, on=['symbol', 'date'], how='inner')
+
+        elif file == 'company-profiles.csv':
+
+            company_profiles = pd.read_csv(directory + str(file))
+
+            try:
+                master = pd.merge(master, company_profiles, on='symbol', how='left')
+            except KeyError:
+                continue
 
     duplicate_cols = [x for x in master if x.endswith('_x') or x.endswith('_y')]
     master.drop(duplicate_cols, axis=1, inplace=True)
@@ -107,7 +106,7 @@ def plot_performance(df, report_year, eval_period, *args):
 
 
 def main():
-    data = prepare_data('data/')
+    data = prepare_data('data/', '10Y')
 
     stats = calculate_stats(data, 'median', 2019, 2, 'Revenue', 'Net Income')
 
@@ -123,19 +122,8 @@ def main():
 
     stock_filter = data.symbol.isin(qualified_stocks.symbol)
     data = data[stock_filter]
-
-    min_year = 2019 - 10
-
-    test = data[data.symbol == 'DLB']
-
-    for ticker in test['symbol']:
-        if test['year'].max() != 2019 or test['year'].min() > min_year:
-            test = test[test.symbol != ticker]
-    #
-    # data = data[data['year'].astype(int) >= min_year]
-    # print(data.symbol.value_counts())
-    # print(data)
-    print(test)
+    data = data[['symbol', 'date', 'year']]
+    print(data)
 
 
 if __name__ == '__main__':
