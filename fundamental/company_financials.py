@@ -120,14 +120,11 @@ def get_financial_data(df, request, period):
     return financial_data
 
 
-# TODO: Create logic to handle duplicate quarterly reports
-def clean_financial_data(df, period):
+def clean_financial_data(df):
     """
-    Remove rows with corrupted date values, create new year column, remove duplicate financial
-    reports for the provided period: annual = 1 report max or quarterly = 4 reports max.
+    Remove rows with corrupted date values, create new year column
 
     :param df: DataFrame containing financial data on N companies
-    :param period: String 'annual' or 'quarter'
     :return: Subset of provided DataFrame, with the addition of a new 'year' column
     :rtype: pandas.DataFrame
     """
@@ -137,14 +134,6 @@ def clean_financial_data(df, period):
 
     df.insert(2, 'year', df['date'].str[:4])
     df['year'] = df.year.astype(int)
-
-    if period == 'annual':
-        df.drop_duplicates(['symbol', 'year'], keep='last', inplace=True)
-
-    elif period == 'quarter':
-        row_count = df.groupby('symbol').size()
-        if row_count[0] % 4.0 != 0:
-            print(row_count.index[0] + ' has an inaccurate number of quarterly reports')
 
     print('Returning clean financial data for ' + str(df['symbol'].nunique()) + ' companies! \n')
 
@@ -166,18 +155,37 @@ def select_analysis_years(df, report_year, eval_period):
     print('Subsetting data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies...')
 
-    min_year = report_year - eval_period
+    df.sort_values(by=['symbol', 'year'], inplace=True, ascending=True)
+    df.drop_duplicates(['symbol', 'year'], keep='last', inplace=True)
 
-    for ticker in df['symbol']:
-        if df['year'].min() > min_year or df['year'].max() < report_year:
-            df = df[df.symbol != ticker]
+    start_year = report_year - eval_period
 
-    df = df[(df['year'].astype(int) >= min_year) & (df['year'].astype(int) <= report_year)]
+    historical_years = set()
+    tickers_to_drop = []
+
+    for i in range(start_year, report_year + 1):
+        historical_years.add(i)
+
+    symbol_history = df.groupby('symbol')['year'].apply(set)
+
+    for symbol, year_set in enumerate(symbol_history):
+        common_years = historical_years.intersection(year_set)
+        if len(common_years) != len(historical_years):
+            tickers_to_drop.append(symbol_history.index[symbol])
+        else:
+            continue
+
+    df = df[~df['symbol'].isin(tickers_to_drop)]
+    df = df[df['year'].isin(historical_years)]
 
     print('Subset data from ' + str(report_year - eval_period) + ' to ' + str(report_year)
           + ' for ' + str(df['symbol'].nunique()) + ' companies! \n')
 
     return df
+
+
+def select_analysis_quarters():
+    pass
 
 
 def main():
@@ -190,7 +198,7 @@ def main():
 
     for request in request_list:
         raw_data = get_financial_data(sector_companies, request, 'annual')
-        clean_data = clean_financial_data(raw_data, 'annual')
+        clean_data = clean_financial_data(raw_data)
         subset_data = select_analysis_years(clean_data, 2019, 10)
         evaluation_period = subset_data.year.max() - subset_data.year.min()
         filename = 'data/' + request + '-' + str(evaluation_period) + 'Y' + '.csv'
