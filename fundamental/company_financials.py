@@ -142,8 +142,7 @@ def clean_financial_data(df):
 
 def select_analysis_years(df, report_year, eval_period):
     """
-    Remove companies without recent financial reports or financial reporting history dating
-    back to the evaluation period specified.
+    Remove companies without financial reports in the evaluation period specified.
 
     :param df: DataFrame containing financial data on N companies
     :param report_year: year of most recent financial report
@@ -184,7 +183,8 @@ def select_analysis_years(df, report_year, eval_period):
     return df
 
 
-def select_analysis_quarters():
+# TODO: Add logic to select specific quarters for analysis
+def select_analysis_quarters(df, report_year, eval_period, *args):
     pass
 
 
