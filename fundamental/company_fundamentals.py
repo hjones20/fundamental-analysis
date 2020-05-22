@@ -1,5 +1,7 @@
 from plotnine import *
 import pandas as pd
+import statistics
+import textwrap
 import os
 
 pd.set_option('display.max_rows', None)
@@ -103,58 +105,102 @@ def screen_stocks(df, **kwargs):
 
 
 def plot_performance(df):
-    pass
+
+    df = df[['symbol', 'year', 'EPS', 'Dividend per Share', 'Book Value per Share', 'ROE',
+             'Current ratio', 'Debt to Equity']]
+
+    df = df.rename({'EPS': 'Earnings per Share', 'ROE': 'Return on Equity',
+                    'Current ratio': 'Current Ratio', 'Debt to Equity': 'Debt to Equity Ratio'},
+                   axis='columns')
+
+    df['Return on Equity'] = df['Return on Equity'].apply(lambda x: x * 100.0)
+
+    df.sort_values(by=['symbol', 'year'], inplace=True, ascending=True)
+    df.dropna(inplace=True)
+
+    label_dict = {'Earnings per Share': 'The EPS shows the company\'s profit per share. This chart '
+                                        'should have a positive slope over time. Stable results '
+                                        'here are extremely important for forecasting future cash '
+                                        'flows. Note: if the company\'s book value has increased '
+                                        'over time, the EPS should demonstrate similar growth.',
+
+                  'Dividend per Share': 'This chart shows the dividend history of the company. '
+                                        'This should have a flat to positive slope over time. If '
+                                        'you see a drastic drop, it may represent a stock split '
+                                        'for the company. Note: the dividend is taken from a '
+                                        'portion of the EPS, the remainder goes to the book value.',
+
+                  'Book Value per Share': 'The book value represents the liquidation value of the '
+                                          'entire company (per share). It\'s important to see '
+                                          'this number increasing over time. If the company pays a'
+                                          ' high dividend, the book value may grow at a slower '
+                                          'rate. If the company pays no dividend, the book value '
+                                          'should grow with the EPS each year.',
+
+                  'Return on Equity': 'Return on equity is very important because it show the '
+                                      'return that management has received for reinvesting the '
+                                      'profits of the company. If using an intrinsic value '
+                                      'calculator, it\'s very important that this number is flat or'
+                                      ' increasing for accurate results. Find companies with a '
+                                      'consistent ROE above 8%.',
+
+                  'Current Ratio': 'The current ratio helps measure the health of the company in '
+                                   'the short term. As a rule of thumb, the current ratio should be'
+                                   ' above 1.0. A safe current ratio is typically above 1.5. Look '
+                                   'for stability trends within the current ratio to see how the '
+                                   'company manages their short term risk.',
+
+                  'Debt to Equity Ratio': 'The debt to equity ratio helps measure the health of '
+                                          'the company in the long term. As a rule of thumb, the '
+                                          'debt to equity ratio should be lower than 0.5. Look for '
+                                          'stability trends within the debt/equity ratio to see how'
+                                          ' the company manages their long term risk.'}
+
+    wrapper = textwrap.TextWrapper(width=120)
+
+    for key, value in label_dict.items():
+        label_dict[key] = wrapper.fill(text=value)
+
+    plots = []
+
+    cols = df.columns[2:].tolist()
+
+    for metric in cols:
+        p = (ggplot(df, aes('year', metric, color='symbol'))
+             + geom_line(size=1, alpha=0.8) + geom_point(size=3, alpha=0.8)
+             + labs(title=metric, x='Report Year', y='', color='Ticker')
+             + theme_538() + theme(legend_position='left', plot_title=element_text(weight='bold'))
+             + scale_x_continuous(breaks=range(min(df['year']), max(df['year']) + 1, 1))
+             + scale_y_continuous(breaks=range(min(df[metric].astype(int)),
+                                               max(round(df[metric]).astype(int)) + 2, 1))
+             + annotate(geom='label', x=statistics.mean((df['year'])),
+                        y=max(round(df[metric]).astype(int) + 1), label=label_dict[metric],
+                        size=8, label_padding=0.8, fill='#F7F7F7'))
+
+        plots.append(p)
+
+    return plots
 
 
 def main():
     data = prepare_data('data/', '10Y')
 
-    stats = calculate_stats(data, 'median', 2019, 2, 'Revenue', 'Net Income')
+    performance_stats = calculate_stats(data, 'median', 2019, 10, 'ROE')
 
     ttm = data[data.year == 2019]
-    ttm = pd.merge(ttm, stats, on=['symbol', 'year'], how='inner')
+    ttm = pd.merge(ttm, performance_stats, on=['symbol', 'year'], how='inner')
 
     criteria = {'Debt to Equity': [0, 0.5],
-                'Current ratio': [1.5, 20.0],
+                'Current ratio': [1.5, 10.0],
                 'ROE': [0.10, 0.50],
+                '10Y ROE Median': [0.08, 0.25],
                 'Interest Coverage': [15, 5000]}
 
     qualified_stocks = screen_stocks(ttm, **criteria)
 
     data = data[data['symbol'].isin(qualified_stocks)]
 
-    ##########################################
-    # Test plot_performance() logic
-    ##########################################
-    data = data[['symbol', 'year', 'EPS', 'Dividend per Share', 'Book Value per Share', 'ROE',
-                 'Current ratio', 'Debt to Equity']]
-
-    test = data
-    test.sort_values(by=['symbol', 'year'], inplace=True, ascending=True)
-    print(test)
-
-    import textwrap
-    import statistics
-
-    wrapper = textwrap.TextWrapper(width=100)
-    eps_label = 'EPS represents the profit per share generated by a given company. This chart ' \
-                'should have a positive slope over time. Stable results are extremely important ' \
-                'for forecasting future cash flows.'
-    eps_wrapped = wrapper.fill(text=eps_label)
-
-    p = (ggplot(test, aes('year', 'EPS', color='symbol'))
-         + geom_line(size=1, alpha=0.8) + geom_point(size=3, alpha=0.8)
-         + labs(title='Earnings per Share', x='Report Year', y='', color='Ticker')
-         + geom_hline(aes(yintercept=0), linetype='dashed', alpha=0.5)
-         + theme_538() + theme(legend_position='left', plot_title=element_text(weight='bold'))
-         + scale_x_continuous(breaks=range(min(test['year']), max(test['year']) + 1, 1))
-         + scale_y_continuous(breaks=range(min(test['EPS'].astype(int)),
-                                           max(test['EPS'].astype(int)) + 1, 1))
-         + annotate(geom='label', x=statistics.mean((test['year'])),
-                    y=max(test['EPS'].astype(int) + 1), label=eps_wrapped,
-                    size=9, label_padding=0.8, fill='#F7F7F7'))
-
-    print(p)
+    visualize = plot_performance(data)
 
 
 if __name__ == '__main__':
