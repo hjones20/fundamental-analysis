@@ -105,6 +105,15 @@ def screen_stocks(df, **kwargs):
 
 
 def plot_performance(df):
+    """
+    Plot metric-specific performance for a set of stocks over time
+
+    Reference: https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20/
+
+    :param df: DataFrame containing the columns specified in line one of the function below
+    :return: A list of ggplot objects
+    :rtype: List
+    """
 
     df = df[['symbol', 'year', 'EPS', 'Dividend per Share', 'Book Value per Share', 'ROE',
              'Current ratio', 'Debt to Equity']]
@@ -200,7 +209,8 @@ def main():
 
     data = data[data['symbol'].isin(qualified_stocks)]
 
-    visualize = plot_performance(data)
+    visuals = plot_performance(data)
+    print(visuals)
 
 
 if __name__ == '__main__':
