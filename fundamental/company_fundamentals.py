@@ -1,4 +1,5 @@
-from plotnine import *
+from plotnine import ggplot, aes, geom_line, geom_point, scale_x_continuous, scale_y_continuous,\
+    labs, theme, theme_538, annotate, element_text
 import pandas as pd
 import statistics
 import textwrap
