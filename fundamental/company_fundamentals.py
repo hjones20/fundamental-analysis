@@ -9,7 +9,7 @@ pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 
 
-def prepare_data(directory, year_pattern):
+def combine_data(directory, year_pattern):
     """
     Load all files in the provided directory as pandas DataFrames and join data into one large
     DataFrame for future analysis.
@@ -111,7 +111,7 @@ def plot_performance(df):
 
     Reference: https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20/
 
-    :param df: DataFrame containing the columns specified in line one of the function below
+    :param df: DataFrame containing stock tickers and the columns specified below
     :return: A list of ggplot objects
     :rtype: List
     """
@@ -192,8 +192,80 @@ def plot_performance(df):
     return plots
 
 
+def prepare_valuation_inputs(df):
+    pass
+# We need the following data for each ticker (done on an annual basis):
+# 2019: Free Cash Flow, Market Cap, Short-term debt, Long-term debt, Cash and cash equivalents,
+        # Total liabilities, Number of Shares, Stock Price
+# Last 10Y: Free Cash Flow Growth (avg), Interest Rate (max), Effective Tax Rate (max)
+
+# Input resulting dataframe to subsequent functions and add on:
+# PV of Discounted Free Cash Flows, N-Year
+# Terminal Value
+# Intrinsic Value
+# Adjusted Intrinsic Value
+# Buy / No Buy relative to most recent stock price
+
+def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
+    """
+    Calculate the Weighted Average Cost of Capital (WACC) for each ticker in the provided dataframe
+
+    :param df: DataFrame containing stock tickers and the columns specified below
+    :param risk_free_rate: The minimum rate of return investors expect to earn from an
+    investment without any risks (use 10-Year Government’s Bond as a Risk Free Rate)
+    :param market_risk_premium: The rate of return over the risk free rate required by investors
+    (info freely available)
+    :return: Unique stock tickers and the associated discount rate (WACC)
+    :rtype: pandas.DataFrame
+    """
+
+    market_value_equity = df['Market Cap']  # 2019
+    market_value_debt = (df['Short-term debt'] + df['Long-term debt']) * 1.20  # 2019
+    total_market_value_debt_equity = market_value_equity + market_value_debt
+
+    # Use max tax rate and interest rate over 10Y span to be conservative
+    # Create interest rate column = (df['Interest Expense'] / df['Total debt']) * 100
+    max_interest_rate = 0  # list comprehension
+    max_tax_rate = 0  # df['profitabilityIndicatorRatios.effectiveTaxRate'] # list comprehension
+
+    cost_of_debt = max_interest_rate * (1 - max_tax_rate)
+    cost_of_equity = risk_free_rate + df['beta'] * market_risk_premium
+                                      # 2019
+
+    wacc = (market_value_equity / total_market_value_debt_equity) * cost_of_equity + (
+            market_value_debt / total_market_value_debt_equity) * cost_of_debt
+
+    return wacc
+
+
+def calculate_discounted_free_cash_flow():
+# get ttm FCF
+# estimate long-term growth rate by taking avg of FCF growth column for last N years
+# project cash flows for 10 years = FCF * (1 + LT Growth Rate) ** N (year number)
+# calculate discount factor = 1 / (1 + Discount Rate) ** N
+# multiply each year's FCF by the Discount Factor to get the discounted FCF for each year
+# sum up the discounted FCF for all years and return as the PV of N-year Discounted FCF
+
+
+def calculate_terminal_value(perpetuity_growth_rate=0):
+    pass
+# perpetuity value = terminal value
+
+
+def calculate_intrinsic_value():
+    pass
+# intrinsic value = (present value + terminal value + cash - debt) / total # of shares outstanding
+
+
+def calculate_adjusted_intrinsic_value(margin_of_safety=0.25):
+    # multiplier = 1 - margin_of_safety
+    # adjusted_value = intrinsic_value * adjusted_value
+    # create new 'BUY' column: if adjusted_value > current price, 'yes' else 'no'
+    pass
+
+
 def main():
-    data = prepare_data('data/', '10Y')
+    data = combine_data('data/', '10Y')
 
     performance_stats = calculate_stats(data, 'median', 2019, 10, 'ROE')
 
@@ -211,7 +283,9 @@ def main():
     data = data[data['symbol'].isin(qualified_stocks)]
 
     visuals = plot_performance(data)
-    print(visuals)
+
+    for i in data.columns:
+        print(i)
 
 
 if __name__ == '__main__':
