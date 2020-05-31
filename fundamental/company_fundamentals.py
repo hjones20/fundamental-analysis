@@ -197,16 +197,20 @@ def plot_performance(df, report_year, eval_period):
     return plots
 
 
-def prepare_valuation_inputs(df, report_year, eval_period):
+def prepare_valuation_inputs(df, report_year, eval_period, *args):
     """
-    Subset dataframe to data required for discounted cash flow model.
+    Subset dataframe to data required for Discounted Cash Flow model.
 
     :param df: Dataframe containing the columns specified below
     :param report_year: Year of most recent financial report
     :param eval_period: Number of years prior to most recent report to be analyzed
+    :param args: Stocks to retain for analysis
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
+
+    symbol_filter = list(args)
+    df = df[df['symbol'].isin(symbol_filter)]
 
     start_year = report_year - eval_period
     df = df.loc[df['year'] >= start_year]
@@ -244,6 +248,7 @@ def prepare_valuation_inputs(df, report_year, eval_period):
 # Adjusted Intrinsic Value
 # Buy / No Buy relative to most recent stock price
 
+
 def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
     """
     Calculate the Weighted Average Cost of Capital (WACC) for each ticker in the provided dataframe
@@ -257,21 +262,17 @@ def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
     :rtype: pandas.DataFrame
     """
 
-    market_value_equity = df['Market Cap']  # 2019
-    market_value_debt = (df['Short-term debt'] + df['Long-term debt']) * 1.20  # 2019
+    market_value_equity = df['Market Cap']
+    market_value_debt = (df['Short-term debt'] + df['Long-term debt']) * 1.20
     total_market_value_debt_equity = market_value_equity + market_value_debt
 
-    # Use max tax rate and interest rate over 10Y span to be conservative
-    # Create interest rate column = (df['Interest Expense'] / df['Total debt']) * 100
-    max_interest_rate = 0  # list comprehension
-    max_tax_rate = 0  # df['profitabilityIndicatorRatios.effectiveTaxRate'] # list comprehension
-
-    cost_of_debt = max_interest_rate * (1 - max_tax_rate)
+    cost_of_debt = df['Max Tax Rate'] * (1 - df['Max Interest Rate'])
     cost_of_equity = risk_free_rate + df['beta'] * market_risk_premium
-                                      # 2019
 
     wacc = (market_value_equity / total_market_value_debt_equity) * cost_of_equity + (
             market_value_debt / total_market_value_debt_equity) * cost_of_debt
+
+    # add wacc to df as Discount Rate column
 
     return wacc
 
@@ -323,7 +324,7 @@ def main():
 
     visuals = plot_performance(data, 2019, 10)
 
-    valuation_data = prepare_valuation_inputs(data, 2019, 10)
+    valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
     print(valuation_data)
 
 
