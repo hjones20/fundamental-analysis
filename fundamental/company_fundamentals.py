@@ -106,16 +106,20 @@ def screen_stocks(df, **kwargs):
     return ticker_list
 
 
-# TODO: Add report_year, eval_period -- subset df in first line
-def plot_performance(df):
+def plot_performance(df, report_year, eval_period):
     """
     Plot metric-specific performance for a set of stocks over time. Reference:
     https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20/
 
     :param df: DataFrame containing stock tickers and the columns specified below
+    :param report_year: Year of most recent financial report
+    :param eval_period: Number of years prior to most recent report to be analyzed
     :return: A list of ggplot objects
     :rtype: List
     """
+
+    start_year = report_year - eval_period
+    df = df.loc[df['year'] >= start_year]
 
     df = df[['symbol', 'year', 'EPS', 'Dividend per Share', 'Book Value per Share', 'ROE',
              'Current ratio', 'Debt to Equity']]
@@ -224,6 +228,13 @@ def prepare_valuation_inputs(df, report_year, eval_period):
     valuation_data = df.merge(max_tax_rate, on='symbol')\
         .merge(max_interest_rate, on='symbol').merge(avg_free_cash_flow_growth, on='symbol')
 
+    valuation_data.rename(columns={'profitabilityIndicatorRatios.effectiveTaxRate':
+                                    'Max Tax Rate', 'Interest Rate': 'Max Interest Rate',
+                                   'Free Cash Flow growth': 'Average FCF Growth'}, inplace=True)
+
+    valuation_data['Max Tax Rate'] = valuation_data['Max Tax Rate'] * 100
+    valuation_data['Average FCF Growth'] = valuation_data['Average FCF Growth'] * 100
+
     return valuation_data
 
 # Input resulting dataframe to subsequent functions and add on:
@@ -310,10 +321,10 @@ def main():
 
     data = data[data['symbol'].isin(qualified_stocks)]
 
-    visuals = plot_performance(data)
+    visuals = plot_performance(data, 2019, 10)
 
-    test = prepare_valuation_inputs(data, 2019, 10)
-    print(test)
+    valuation_data = prepare_valuation_inputs(data, 2019, 10)
+    print(valuation_data)
 
 
 if __name__ == '__main__':
