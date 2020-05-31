@@ -241,24 +241,17 @@ def prepare_valuation_inputs(df, report_year, eval_period, *args):
 
     return valuation_data
 
-# Input resulting dataframe to subsequent functions and add on:
-# PV of Discounted Free Cash Flows, N-Year
-# Terminal Value
-# Intrinsic Value
-# Adjusted Intrinsic Value
-# Buy / No Buy relative to most recent stock price
-
 
 def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
     """
-    Calculate the Weighted Average Cost of Capital (WACC) for each ticker in the provided dataframe
+    Calculate the Weighted Average Cost of Capital (WACC) for each ticker in the provided dataframe.
 
     :param df: DataFrame containing stock tickers and the columns specified below
     :param risk_free_rate: The minimum rate of return investors expect to earn from an
     investment without any risks (use 10-Year Government’s Bond as a Risk Free Rate)
     :param market_risk_premium: The rate of return over the risk free rate required by investors
     (info freely available)
-    :return: Unique stock tickers and the associated discount rate (WACC)
+    :return: Original dataframe with the addition of a new 'Discount Rate' (WACC) column
     :rtype: pandas.DataFrame
     """
 
@@ -269,12 +262,10 @@ def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
     cost_of_debt = df['Max Tax Rate'] * (1 - df['Max Interest Rate'])
     cost_of_equity = risk_free_rate + df['beta'] * market_risk_premium
 
-    wacc = (market_value_equity / total_market_value_debt_equity) * cost_of_equity + (
-            market_value_debt / total_market_value_debt_equity) * cost_of_debt
+    df['Discount Rate'] = (market_value_equity / total_market_value_debt_equity) * cost_of_equity \
+                            + (market_value_debt / total_market_value_debt_equity) * cost_of_debt
 
-    # add wacc to df as Discount Rate column
-
-    return wacc
+    return df
 
 
 def calculate_discounted_free_cash_flow():
@@ -325,7 +316,9 @@ def main():
     visuals = plot_performance(data, 2019, 10)
 
     valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
-    print(valuation_data)
+
+    add_discount_rate = calculate_discount_rate(valuation_data)
+    print(add_discount_rate)
 
 
 if __name__ == '__main__':
