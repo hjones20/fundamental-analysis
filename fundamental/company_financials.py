@@ -11,7 +11,7 @@ def select_sector(df, *args):
     Remove companies not in the sector provided.
 
     :param df: DataFrame containing sector info on N companies
-    :param args: tuple representing sectors to retain for analysis
+    :param args: Tuple representing sectors to retain for analysis
     :return: Subset of DataFrame provided, containing companies in the specified sector
     :rtype: pandas.DataFrame
     """
@@ -31,7 +31,7 @@ def select_industries(df, *args):
     Remove companies not in the industries provided.
 
     :param df: DataFrame containing industry info on N companies
-    :param args: tuple representing industries to retain for analysis
+    :param args: Tuple representing industries to retain for analysis
     :return: Subset of DataFrame provided, containing companies in the specified industry
     :rtype: pandas.DataFrame
     """
@@ -145,8 +145,8 @@ def select_analysis_years(df, report_year, eval_period):
     Remove companies without financial reports in the evaluation period specified.
 
     :param df: DataFrame containing financial data on N companies
-    :param report_year: year of most recent financial report
-    :param eval_period: number of years prior to most recent report to be analyzed
+    :param report_year: Year of most recent financial report
+    :param eval_period: Number of years prior to most recent report to be analyzed
     :return: Subset of the DataFrame provided
     :rtype: pandas.DataFrame
     """
