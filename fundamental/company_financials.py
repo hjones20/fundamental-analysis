@@ -11,7 +11,7 @@ def select_sector(df, *args):
     Remove companies not in the sector provided.
 
     :param df: DataFrame containing sector info on N companies
-    :param args: Tuple representing sectors to retain for analysis
+    :param args: Sectors to retain for analysis
     :return: Subset of DataFrame provided, containing companies in the specified sector
     :rtype: pandas.DataFrame
     """
@@ -31,7 +31,7 @@ def select_industries(df, *args):
     Remove companies not in the industries provided.
 
     :param df: DataFrame containing industry info on N companies
-    :param args: Tuple representing industries to retain for analysis
+    :param args: Industries to retain for analysis
     :return: Subset of DataFrame provided, containing companies in the specified industry
     :rtype: pandas.DataFrame
     """
@@ -122,7 +122,7 @@ def get_financial_data(df, request, period):
 
 def clean_financial_data(df):
     """
-    Remove rows with corrupted date values, create new year column
+    Remove rows with corrupted date values, create new year column.
 
     :param df: DataFrame containing financial data on N companies
     :return: Subset of provided DataFrame, with the addition of a new 'year' column
