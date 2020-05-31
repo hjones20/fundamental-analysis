@@ -1,5 +1,6 @@
 from plotnine import ggplot, aes, geom_line, geom_point, scale_x_continuous, scale_y_continuous,\
     labs, theme, theme_538, annotate, element_text
+import numpy as np
 import pandas as pd
 import statistics
 import textwrap
@@ -105,11 +106,11 @@ def screen_stocks(df, **kwargs):
     return ticker_list
 
 
+# TODO: Add report_year, eval_period -- subset df in first line
 def plot_performance(df):
     """
-    Plot metric-specific performance for a set of stocks over time
-
-    Reference: https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20/
+    Plot metric-specific performance for a set of stocks over time. Reference:
+    https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20/
 
     :param df: DataFrame containing stock tickers and the columns specified below
     :return: A list of ggplot objects
@@ -192,12 +193,38 @@ def plot_performance(df):
     return plots
 
 
-def prepare_valuation_inputs(df):
-    pass
-# We need the following data for each ticker (done on an annual basis):
-# 2019: Free Cash Flow, Market Cap, Short-term debt, Long-term debt, Cash and cash equivalents,
-        # Total liabilities, Number of Shares, Stock Price
-# Last 10Y: Free Cash Flow Growth (avg), Interest Rate (max), Effective Tax Rate (max)
+def prepare_valuation_inputs(df, report_year, eval_period):
+    """
+    Subset dataframe to data required for discounted cash flow model.
+
+    :param df: Dataframe containing the columns specified below
+    :param report_year: Year of most recent financial report
+    :param eval_period: Number of years prior to most recent report to be analyzed
+    :return: Subset of the DataFrame provided
+    :rtype: pandas.DataFrame
+    """
+
+    start_year = report_year - eval_period
+    df = df.loc[df['year'] >= start_year]
+
+    df['Interest Rate'] = (df['Interest Expense'] / df['Total debt']) * 100
+
+    df = df.replace([np.inf, -np.inf, np.nan], 0)
+
+    max_tax_rate = df.groupby('symbol')['profitabilityIndicatorRatios.effectiveTaxRate'].max().reset_index()
+    max_interest_rate = df.groupby('symbol')['Interest Rate'].max().reset_index()
+    avg_free_cash_flow_growth = df.groupby('symbol')['Free Cash Flow growth'].mean().reset_index()
+
+    df = df[['symbol', 'year', 'Free Cash Flow', 'Market Cap', 'Short-term debt', 'Long-term debt',
+             'beta', '- Cash & Cash Equivalents', 'Total liabilities', 'Number of Shares',
+             'Stock Price']]
+
+    df = df.loc[df['year'] == report_year]
+
+    valuation_data = df.merge(max_tax_rate, on='symbol')\
+        .merge(max_interest_rate, on='symbol').merge(avg_free_cash_flow_growth, on='symbol')
+
+    return valuation_data
 
 # Input resulting dataframe to subsequent functions and add on:
 # PV of Discounted Free Cash Flows, N-Year
@@ -239,6 +266,7 @@ def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
 
 
 def calculate_discounted_free_cash_flow():
+    pass
 # get ttm FCF
 # estimate long-term growth rate by taking avg of FCF growth column for last N years
 # project cash flows for 10 years = FCF * (1 + LT Growth Rate) ** N (year number)
@@ -258,10 +286,10 @@ def calculate_intrinsic_value():
 
 
 def calculate_adjusted_intrinsic_value(margin_of_safety=0.25):
+    pass
     # multiplier = 1 - margin_of_safety
     # adjusted_value = intrinsic_value * adjusted_value
     # create new 'BUY' column: if adjusted_value > current price, 'yes' else 'no'
-    pass
 
 
 def main():
@@ -284,8 +312,8 @@ def main():
 
     visuals = plot_performance(data)
 
-    for i in data.columns:
-        print(i)
+    test = prepare_valuation_inputs(data, 2019, 10)
+    print(test)
 
 
 if __name__ == '__main__':
