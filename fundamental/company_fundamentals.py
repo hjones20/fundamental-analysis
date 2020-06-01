@@ -215,13 +215,12 @@ def prepare_valuation_inputs(df, report_year, eval_period, *args):
     start_year = report_year - eval_period
     df = df.loc[df['year'] >= start_year]
 
-    df['Interest Rate'] = (df['Interest Expense'] / df['Total debt']) * 100
+    df['Interest Rate'] = round((df['Interest Expense'] / df['Total debt']), 2)
 
     df = df.replace([np.inf, -np.inf, np.nan], 0)
 
     max_tax_rate = df.groupby('symbol')['profitabilityIndicatorRatios.effectiveTaxRate'].max().reset_index()
     max_interest_rate = df.groupby('symbol')['Interest Rate'].max().reset_index()
-    avg_free_cash_flow_growth = df.groupby('symbol')['Free Cash Flow growth'].mean().reset_index()
 
     df = df[['symbol', 'year', 'Free Cash Flow', 'Market Cap', 'Short-term debt', 'Long-term debt',
              'beta', '- Cash & Cash Equivalents', 'Total liabilities', 'Number of Shares',
@@ -229,24 +228,21 @@ def prepare_valuation_inputs(df, report_year, eval_period, *args):
 
     df = df.loc[df['year'] == report_year]
 
-    valuation_data = df.merge(max_tax_rate, on='symbol')\
-        .merge(max_interest_rate, on='symbol').merge(avg_free_cash_flow_growth, on='symbol')
+    valuation_data = df.merge(max_tax_rate, on='symbol').merge(max_interest_rate, on='symbol')
 
-    valuation_data.rename(columns={'profitabilityIndicatorRatios.effectiveTaxRate':
-                                    'Max Tax Rate', 'Interest Rate': 'Max Interest Rate',
-                                   'Free Cash Flow growth': 'Average FCF Growth'}, inplace=True)
+    valuation_data.rename(columns={'profitabilityIndicatorRatios.effectiveTaxRate': 'Max Tax Rate',
+                                   'Interest Rate': 'Max Interest Rate'}, inplace=True)
 
-    valuation_data['Max Tax Rate'] = valuation_data['Max Tax Rate'] * 100
-    valuation_data['Average FCF Growth'] = valuation_data['Average FCF Growth'] * 100
+    valuation_data['Max Tax Rate'] = round(valuation_data['Max Tax Rate'], 2)
 
     return valuation_data
 
 
-def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
+def calculate_discount_rate(df, risk_free_rate=0.0069, market_risk_premium=0.06):
     """
     Calculate the Weighted Average Cost of Capital (WACC) for each ticker in the provided dataframe.
 
-    :param df: DataFrame containing stock tickers and the columns specified below
+    :param df: DataFrame containing a single row of valuation inputs for each stock ticker
     :param risk_free_rate: The minimum rate of return investors expect to earn from an
     investment without any risks (use 10-Year Government’s Bond as a Risk Free Rate)
     :param market_risk_premium: The rate of return over the risk free rate required by investors
@@ -259,23 +255,63 @@ def calculate_discount_rate(df, risk_free_rate=0.653, market_risk_premium=6.0):
     market_value_debt = (df['Short-term debt'] + df['Long-term debt']) * 1.20
     total_market_value_debt_equity = market_value_equity + market_value_debt
 
-    cost_of_debt = df['Max Tax Rate'] * (1 - df['Max Interest Rate'])
+    cost_of_debt = df['Max Interest Rate'] * (1 - df['Max Tax Rate'])
     cost_of_equity = risk_free_rate + df['beta'] * market_risk_premium
 
-    df['Discount Rate'] = (market_value_equity / total_market_value_debt_equity) * cost_of_equity \
-                            + (market_value_debt / total_market_value_debt_equity) * cost_of_debt
+    df['Discount Rate'] = round((market_value_equity / total_market_value_debt_equity) * cost_of_equity \
+                                + (market_value_debt / total_market_value_debt_equity) * cost_of_debt, 2)
 
     return df
 
 
-def calculate_discounted_free_cash_flow():
-    pass
-# get ttm FCF
-# estimate long-term growth rate by taking avg of FCF growth column for last N years
-# project cash flows for 10 years = FCF * (1 + LT Growth Rate) ** N (year number)
-# calculate discount factor = 1 / (1 + Discount Rate) ** N
-# multiply each year's FCF by the Discount Factor to get the discounted FCF for each year
-# sum up the discounted FCF for all years and return as the PV of N-year Discounted FCF
+def calculate_discounted_free_cash_flow(df, projection_window, **kwargs):
+    """
+    Calculate the present value of discounted future cash flows for each ticker in the provided
+    Dataframe.
+
+    :param df: DataFrame containing a single row of valuation inputs for each stock ticker
+    :param projection_window: Number of years into the future we should generate projections for
+    :param kwargs: Dictionary containing stock tickers as keys and long term growth rate
+    estimates as values
+    :return: Original dataframe with the addition of new columns: 'Present Value of Discounted
+    FCF', 'Last Projected FCF', 'Last Projected Discount Factor'
+    :rtype: pandas.DataFrame
+    """
+
+    estimated_growth = pd.DataFrame(kwargs.items(), columns=['symbol', 'Long Term Growth Rate'])
+    df = df.merge(estimated_growth, on='symbol')
+
+    dfcf = pd.DataFrame(columns=['year', 'symbol', 'Last Projected FCF',
+                                 'Last Projected Discount Factor',
+                                 'Present Value of Discounted FCF'])
+
+    for row in df.itertuples(index=False):
+
+        for year in range(projection_window + 1):
+            projected_free_cash_flow = row[df.columns.get_loc('Free Cash Flow')] * \
+                                       (1 + row[df.columns.get_loc('Long Term Growth Rate')]) ** \
+                                       year
+
+            discount_factor = 1 / (1 + row[df.columns.get_loc('Discount Rate')]) ** year
+
+            discounted_free_cash_flow = projected_free_cash_flow * discount_factor
+
+            dfcf = dfcf.append({'year': year, 'symbol': row[df.columns.get_loc('symbol')],
+                                'Last Projected FCF': round(projected_free_cash_flow, 2),
+                                'Last Projected Discount Factor': round(discount_factor, 2),
+                                'Present Value of Discounted FCF': round(discounted_free_cash_flow, 2)},
+                               ignore_index=True)
+
+    dfcf = dfcf.loc[dfcf['year'] != 0]
+
+    pv_dfcf = dfcf.groupby('symbol')['Present Value of Discounted FCF'].sum().reset_index()
+    last_fcf = dfcf.loc[dfcf['year'] == max(dfcf['year'])][['symbol', 'Last Projected FCF']]
+    last_df = dfcf.loc[dfcf['year'] == max(dfcf['year'])][['symbol', 'Last Projected Discount '
+                                                                     'Factor']]
+
+    df = df.merge(pv_dfcf, on='symbol').merge(last_fcf, on='symbol').merge(last_df, on='symbol')
+
+    return df
 
 
 def calculate_terminal_value(perpetuity_growth_rate=0):
@@ -318,7 +354,11 @@ def main():
     valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
 
     add_discount_rate = calculate_discount_rate(valuation_data)
-    print(add_discount_rate)
+
+    growth_estimates = {'GNTX': 0.10, 'DLB': 0.12}
+
+    calculate_dfcf = calculate_discounted_free_cash_flow(add_discount_rate, 10, **growth_estimates)
+    print(calculate_dfcf)
 
 
 if __name__ == '__main__':
