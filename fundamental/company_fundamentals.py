@@ -336,29 +336,27 @@ def main():
 
     performance_stats = calculate_stats(data, 'median', 2019, 10, 'ROE')
 
-    ttm = data[data.year == 2019]
-    ttm = pd.merge(ttm, performance_stats, on=['symbol', 'year'], how='inner')
+    ttm_data = data[data.year == 2019]
+    ttm_data = ttm_data.merge(performance_stats, on=['symbol', 'year'], how='inner')
 
-    criteria = {'Debt to Equity': [0, 0.5],
-                'Current ratio': [1.5, 10.0],
-                'ROE': [0.10, 0.50],
-                '10Y ROE Median': [0.08, 0.25],
-                'Interest Coverage': [15, 5000]}
+    screening_criteria = {'Debt to Equity': [0, 0.5],
+                          'Current ratio': [1.5, 10.0],
+                          'ROE': [0.10, 0.50],
+                          '10Y ROE Median': [0.08, 0.25],
+                          'Interest Coverage': [15, 5000]}
 
-    qualified_stocks = screen_stocks(ttm, **criteria)
-
-    data = data[data['symbol'].isin(qualified_stocks)]
-
-    visuals = plot_performance(data, 2019, 10)
+    qualified_stocks = screen_stocks(ttm_data, **screening_criteria)
+    historical_data = data[data['symbol'].isin(qualified_stocks)]
+    historical_performance_plots = plot_performance(historical_data, 2019, 10)
 
     valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
+    valuation_data = calculate_discount_rate(valuation_data)
 
-    add_discount_rate = calculate_discount_rate(valuation_data)
+    long_term_growth_estimates = {'GNTX': 0.10, 'DLB': 0.12}
 
-    growth_estimates = {'GNTX': 0.10, 'DLB': 0.12}
-
-    calculate_dfcf = calculate_discounted_free_cash_flow(add_discount_rate, 10, **growth_estimates)
-    print(calculate_dfcf)
+    valuation_data = calculate_discounted_free_cash_flow(valuation_data, 10,
+                                                         **long_term_growth_estimates)
+    print(valuation_data)
 
 
 if __name__ == '__main__':
