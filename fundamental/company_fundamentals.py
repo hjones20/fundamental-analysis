@@ -199,7 +199,7 @@ def plot_performance(df, report_year, eval_period):
 
 def prepare_valuation_inputs(df, report_year, eval_period, *args):
     """
-    Subset dataframe to data required for Discounted Cash Flow model.
+    Subset DataFrame to data required for Discounted Cash Flow model.
 
     :param df: Dataframe containing the columns specified below
     :param report_year: Year of most recent financial report
@@ -240,14 +240,13 @@ def prepare_valuation_inputs(df, report_year, eval_period, *args):
 
 def calculate_discount_rate(df, risk_free_rate=0.0069, market_risk_premium=0.06):
     """
-    Calculate the Weighted Average Cost of Capital (WACC) for each ticker in the provided dataframe.
+    Calculate the Weighted Average Cost of Capital (WACC) for each ticker in the provided DataFrame.
 
     :param df: DataFrame containing a single row of valuation inputs for each stock ticker
     :param risk_free_rate: The minimum rate of return investors expect to earn from an
-    investment without any risks (use 10-Year Government’s Bond as a Risk Free Rate)
+    investment without risk (use 10-Year Government’s Bond as a Risk Free Rate)
     :param market_risk_premium: The rate of return over the risk free rate required by investors
-    (info freely available)
-    :return: Original dataframe with the addition of a new 'Discount Rate' (WACC) column
+    :return: Original DataFrame with the addition of a new 'Discount Rate' (WACC) column
     :rtype: pandas.DataFrame
     """
 
@@ -266,14 +265,14 @@ def calculate_discount_rate(df, risk_free_rate=0.0069, market_risk_premium=0.06)
 
 def calculate_discounted_free_cash_flow(df, projection_window, **kwargs):
     """
-    Calculate the present value of discounted future cash flows for each ticker in the provided
-    Dataframe.
+    Calculate the present value of discounted future cash flows for each stock ticker in the
+    provided Dataframe.
 
     :param df: DataFrame containing a single row of valuation inputs for each stock ticker
     :param projection_window: Number of years into the future we should generate projections for
     :param kwargs: Dictionary containing stock tickers as keys and long term growth rate
     estimates as values
-    :return: Original dataframe with the addition of new columns: 'Present Value of Discounted
+    :return: Original DataFrame with the addition of new columns: 'Present Value of Discounted
     FCF', 'Last Projected FCF', 'Last Projected Discount Factor'
     :rtype: pandas.DataFrame
     """
@@ -314,9 +313,20 @@ def calculate_discounted_free_cash_flow(df, projection_window, **kwargs):
     return df
 
 
-def calculate_terminal_value(perpetuity_growth_rate=0):
-    pass
-# perpetuity value = terminal value
+def calculate_terminal_value(df, gdp_growth_rate=0.029):
+    """
+    Calculate the terminal value for each stock ticker in the provided DataFrame.
+
+    :param df: DataFrame containing a single row of valuation inputs for each stock ticker
+    :param gdp_growth_rate: https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG?locations=US
+    :return: Original DataFrame with the addition of a new 'Terminal Value' column
+    :rtype: pandas.DataFrame
+    """
+
+    df['Terminal Value'] = df['Last Projected FCF'] * (1 + gdp_growth_rate) / df['Discount Rate']\
+                           - gdp_growth_rate
+
+    return df
 
 
 def calculate_intrinsic_value():
@@ -349,6 +359,9 @@ def main():
     historical_data = data[data['symbol'].isin(qualified_stocks)]
     historical_performance_plots = plot_performance(historical_data, 2019, 10)
 
+    # discounted cash flow model steps
+    # iteratively pass df to each step (updating at each step)
+
     valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
     valuation_data = calculate_discount_rate(valuation_data)
 
@@ -356,6 +369,8 @@ def main():
 
     valuation_data = calculate_discounted_free_cash_flow(valuation_data, 10,
                                                          **long_term_growth_estimates)
+
+    valuation_data = calculate_terminal_value(valuation_data)
     print(valuation_data)
 
 
