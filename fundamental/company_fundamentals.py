@@ -381,21 +381,21 @@ def main():
     historical_data = data[data['symbol'].isin(qualified_stocks)]
     historical_performance_plots = plot_performance(historical_data, 2019, 10)
 
-    # discounted cash flow model steps
-    # iteratively pass df to each step (updating at each step)
-
-    valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
-    valuation_data = calculate_discount_rate(valuation_data)
-
     long_term_growth_estimates = {'GNTX': 0.05, 'DLB': 0.06}
 
-    valuation_data = calculate_discounted_free_cash_flow(valuation_data, 10,
-                                                         **long_term_growth_estimates)
+    valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
 
-    valuation_data = calculate_terminal_value(valuation_data)
-    valuation_data = calculate_intrinsic_value(valuation_data)
-    final = calculate_margin_of_safety(valuation_data)
-    print(final)
+    dcf_model_steps = [calculate_discount_rate, calculate_discounted_free_cash_flow,
+                       calculate_terminal_value, calculate_intrinsic_value,
+                       calculate_margin_of_safety]
+
+    for step in dcf_model_steps:
+        if step == calculate_discounted_free_cash_flow:
+            valuation_data = step(valuation_data, 10, **long_term_growth_estimates)
+        else:
+            valuation_data = step(valuation_data)
+
+    print(valuation_data)
 
 
 if __name__ == '__main__':
