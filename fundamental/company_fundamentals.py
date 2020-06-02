@@ -330,6 +330,13 @@ def calculate_terminal_value(df, gdp_growth_rate=0.029):
 
 
 def calculate_intrinsic_value(df):
+    """
+    Calculate the intrinsic value of each stock ticker in the provided DataFrame.
+
+    :param df: DataFrame containing a single row of valuation inputs for each stock ticker
+    :return: Original DataFrame with the addition of a new 'Intrinsic Value' column
+    :rtype: pandas.DataFrame
+    """
 
     df['Intrinsic Value'] = (df['Present Value of Discounted FCF'] + df['Terminal Value']
                              + df['- Cash & Cash Equivalents'] - df['Total liabilities']) \
@@ -338,11 +345,22 @@ def calculate_intrinsic_value(df):
     return df
 
 
-def calculate_adjusted_intrinsic_value(margin_of_safety=0.25):
-    pass
-    # multiplier = 1 - margin_of_safety
-    # adjusted_value = intrinsic_value * adjusted_value
-    # create new 'BUY' column: if adjusted_value > current price, 'yes' else 'no'
+def calculate_margin_of_safety(df, margin_of_safety=0.25):
+    """
+    Calculate the margin of safety value of each stock ticker in the provided DataFrame.
+
+    :param df: DataFrame containing a single row of valuation inputs for each stock ticker
+    :param margin_of_safety: Value by which to discount our original intrinsic value calculation
+    :return: Original DataFrame with the addition of new columns: 'Margin of Safety Value', 'Buy'
+    :rtype: pandas.DataFrame
+    """
+
+    multiplier = 1 - margin_of_safety
+    df['Margin of Safety Value'] = df['Intrinsic Value'] * multiplier
+
+    df['Buy Decision'] = np.where(df['Margin of Safety Value'] > df['Stock Price'], 'Yes', 'No')
+
+    return df
 
 
 def main():
@@ -376,7 +394,8 @@ def main():
 
     valuation_data = calculate_terminal_value(valuation_data)
     valuation_data = calculate_intrinsic_value(valuation_data)
-    print(valuation_data)
+    final = calculate_margin_of_safety(valuation_data)
+    print(final)
 
 
 if __name__ == '__main__':
