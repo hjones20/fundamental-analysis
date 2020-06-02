@@ -323,15 +323,19 @@ def calculate_terminal_value(df, gdp_growth_rate=0.029):
     :rtype: pandas.DataFrame
     """
 
-    df['Terminal Value'] = df['Last Projected FCF'] * (1 + gdp_growth_rate) / df['Discount Rate']\
-                           - gdp_growth_rate
+    df['Terminal Value'] = (df['Last Projected FCF'] * (1 + gdp_growth_rate)) \
+                           / df['Discount Rate'] - gdp_growth_rate
 
     return df
 
 
-def calculate_intrinsic_value():
-    pass
-# intrinsic value = (present value + terminal value + cash - debt) / total # of shares outstanding
+def calculate_intrinsic_value(df):
+
+    df['Intrinsic Value'] = (df['Present Value of Discounted FCF'] + df['Terminal Value']
+                             + df['- Cash & Cash Equivalents'] - df['Total liabilities']) \
+                            / df['Number of Shares']
+
+    return df
 
 
 def calculate_adjusted_intrinsic_value(margin_of_safety=0.25):
@@ -365,12 +369,13 @@ def main():
     valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
     valuation_data = calculate_discount_rate(valuation_data)
 
-    long_term_growth_estimates = {'GNTX': 0.10, 'DLB': 0.12}
+    long_term_growth_estimates = {'GNTX': 0.05, 'DLB': 0.06}
 
     valuation_data = calculate_discounted_free_cash_flow(valuation_data, 10,
                                                          **long_term_growth_estimates)
 
     valuation_data = calculate_terminal_value(valuation_data)
+    valuation_data = calculate_intrinsic_value(valuation_data)
     print(valuation_data)
 
 
