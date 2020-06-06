@@ -1,5 +1,6 @@
 from plotnine import ggplot, aes, geom_line, geom_point, scale_x_continuous, scale_y_continuous,\
     labs, theme, theme_538, annotate, element_text
+
 import numpy as np
 import pandas as pd
 import statistics
@@ -32,18 +33,20 @@ def combine_data(directory, year_pattern):
             if master.empty:
                 master = financial_data
             else:
-                master = pd.merge(master, financial_data, on=['symbol', 'date'], how='inner')
+                master = pd.merge(master, financial_data, on=['symbol', 'date'], how='inner',
+                                  suffixes=('', '_x'))
 
         elif file == 'company-profiles.csv':
 
             company_profiles = pd.read_csv(directory + str(file))
 
             try:
-                master = pd.merge(master, company_profiles, on='symbol', how='left')
+                master = pd.merge(master, company_profiles, on='symbol', how='left',
+                                  suffixes=('', '_x'))
             except KeyError:
                 continue
 
-    duplicate_cols = [x for x in master if x.endswith('_x') or x.endswith('_y')]
+    duplicate_cols = [x for x in master if x.endswith('_x')]
     master.drop(duplicate_cols, axis=1, inplace=True)
 
     return master
@@ -72,15 +75,15 @@ def calculate_stats(df, stat, report_year, eval_period, *args):
         metric = metric.pivot_table(values=arg, index='symbol', columns='year')
 
         if stat == 'percent change':
-            column_name = str(eval_period) + 'Y ' + arg + ' % Change'
+            column_name = str(eval_period) + 'Y ' + arg + ' % change'
             company_stats[column_name] = (metric.iloc[:, -1] / metric.iloc[:, 0]) - 1
 
         elif stat == 'mean':
-            column_name = str(eval_period) + 'Y ' + arg + ' Mean'
+            column_name = str(eval_period) + 'Y ' + arg + ' mean'
             company_stats[column_name] = metric.mean(axis=1)
 
         elif stat == 'median':
-            column_name = str(eval_period) + 'Y ' + arg + ' Median'
+            column_name = str(eval_period) + 'Y ' + arg + ' median'
             company_stats[column_name] = metric.median(axis=1)
 
     company_stats['year'] = report_year
@@ -121,14 +124,13 @@ def plot_performance(df, report_year, eval_period):
     start_year = report_year - eval_period
     df = df.loc[df['year'] >= start_year]
 
-    df = df[['symbol', 'year', 'EPS', 'Dividend per Share', 'Book Value per Share', 'ROE',
-             'Current ratio', 'Debt to Equity']]
+    df = df[['symbol', 'year', 'eps', 'bookValuePerShare', 'roe', 'currentRatio', 'debtToEquity']]
 
-    df = df.rename({'EPS': 'Earnings per Share', 'ROE': 'Return on Equity',
-                    'Current ratio': 'Current Ratio', 'Debt to Equity': 'Debt to Equity Ratio'},
-                   axis='columns')
+    df['roe'] = df['roe'].apply(lambda x: x * 100.0)
 
-    df['Return on Equity'] = df['Return on Equity'].apply(lambda x: x * 100.0)
+    df = df.rename({'eps': 'Earnings per Share', 'roe': 'Return on Equity',
+                    'currentRatio': 'Current Ratio', 'debtToEquity': 'Debt to Equity Ratio',
+                    'bookValuePerShare': 'Book Value per Share'}, axis='columns')
 
     df.sort_values(by=['symbol', 'year'], inplace=True, ascending=True)
     df.dropna(inplace=True)
@@ -139,11 +141,12 @@ def plot_performance(df, report_year, eval_period):
                                         'flows. Note: if the company\'s book value has increased '
                                         'over time, the EPS should demonstrate similar growth.',
 
-                  'Dividend per Share': 'This chart shows the dividend history of the company. '
-                                        'This should have a flat to positive slope over time. If '
-                                        'you see a drastic drop, it may represent a stock split '
-                                        'for the company. Note: the dividend is taken from a '
-                                        'portion of the EPS, the remainder goes to the book value.',
+    # Commenting out for now, API isn't returning this col in income-statement response right now...
+                  # 'Dividend per Share': 'This chart shows the dividend history of the company. '
+                  #                       'This should have a flat to positive slope over time. If '
+                  #                       'you see a drastic drop, it may represent a stock split '
+                  #                       'for the company. Note: the dividend is taken from a '
+                  #                       'portion of the EPS, the remainder goes to the book value.',
 
                   'Book Value per Share': 'The book value represents the liquidation value of the '
                                           'entire company (per share). It\'s important to see '
@@ -215,23 +218,23 @@ def prepare_valuation_inputs(df, report_year, eval_period, *args):
     start_year = report_year - eval_period
     df = df.loc[df['year'] >= start_year]
 
-    df['Interest Rate'] = round((df['Interest Expense'] / df['Total debt']), 2)
+    df['interestRate'] = round((df['interestExpense'] / df['totalDebt']), 2)
 
     df = df.replace([np.inf, -np.inf, np.nan], 0)
 
-    max_tax_rate = df.groupby('symbol')['profitabilityIndicatorRatios.effectiveTaxRate'].max().reset_index()
-    max_interest_rate = df.groupby('symbol')['Interest Rate'].max().reset_index()
+    max_tax_rate = df.groupby('symbol')['effectiveTaxRate'].max().reset_index()
+    max_interest_rate = df.groupby('symbol')['interestRate'].max().reset_index()
 
-    df = df[['symbol', 'year', 'Free Cash Flow', 'Market Cap', 'Short-term debt', 'Long-term debt',
-             'beta', '- Cash & Cash Equivalents', 'Total liabilities', 'Number of Shares',
-             'Stock Price']]
+    df = df[['symbol', 'year', 'freeCashFlow', 'marketCap', 'shortTermDebt', 'longTermDebt',
+             'profile.beta', 'cashAndCashEquivalents', 'totalLiabilities', 'numberOfShares',
+             'stockPrice']]
 
     df = df.loc[df['year'] == report_year]
 
     valuation_data = df.merge(max_tax_rate, on='symbol').merge(max_interest_rate, on='symbol')
 
-    valuation_data.rename(columns={'profitabilityIndicatorRatios.effectiveTaxRate': 'Max Tax Rate',
-                                   'Interest Rate': 'Max Interest Rate'}, inplace=True)
+    valuation_data.rename(columns={'effectiveTaxRate': 'Max Tax Rate',
+                                   'interestRate': 'Max Interest Rate'}, inplace=True)
 
     valuation_data['Max Tax Rate'] = round(valuation_data['Max Tax Rate'], 2)
 
@@ -244,18 +247,18 @@ def calculate_discount_rate(df, risk_free_rate=0.0069, market_risk_premium=0.06)
 
     :param df: DataFrame containing a single row of valuation inputs for each stock ticker
     :param risk_free_rate: The minimum rate of return investors expect to earn from an
-    investment without risk (use 10-Year Government’s Bond as a Risk Free Rate)
+           investment without risk (use 10-Year Government’s Bond as a Risk Free Rate)
     :param market_risk_premium: The rate of return over the risk free rate required by investors
     :return: Original DataFrame with the addition of a new 'Discount Rate' (WACC) column
     :rtype: pandas.DataFrame
     """
 
-    market_value_equity = df['Market Cap']
-    market_value_debt = (df['Short-term debt'] + df['Long-term debt']) * 1.20
+    market_value_equity = df['marketCap']
+    market_value_debt = (df['shortTermDebt'] + df['longTermDebt']) * 1.20
     total_market_value_debt_equity = market_value_equity + market_value_debt
 
     cost_of_debt = df['Max Interest Rate'] * (1 - df['Max Tax Rate'])
-    cost_of_equity = risk_free_rate + df['beta'] * market_risk_premium
+    cost_of_equity = risk_free_rate + df['profile.beta'] * market_risk_premium
 
     df['Discount Rate'] = round((market_value_equity / total_market_value_debt_equity) * cost_of_equity \
                                 + (market_value_debt / total_market_value_debt_equity) * cost_of_debt, 2)
@@ -271,7 +274,7 @@ def calculate_discounted_free_cash_flow(df, projection_window, **kwargs):
     :param df: DataFrame containing a single row of valuation inputs for each stock ticker
     :param projection_window: Number of years into the future we should generate projections for
     :param kwargs: Dictionary containing stock tickers as keys and long term growth rate
-    estimates as values
+           estimates as values
     :return: Original DataFrame with the addition of new columns: 'Present Value of Discounted
     FCF', 'Last Projected FCF', 'Last Projected Discount Factor'
     :rtype: pandas.DataFrame
@@ -287,7 +290,7 @@ def calculate_discounted_free_cash_flow(df, projection_window, **kwargs):
     for row in df.itertuples(index=False):
 
         for year in range(projection_window + 1):
-            projected_free_cash_flow = row[df.columns.get_loc('Free Cash Flow')] * \
+            projected_free_cash_flow = row[df.columns.get_loc('freeCashFlow')] * \
                                        (1 + row[df.columns.get_loc('Long Term Growth Rate')]) ** \
                                        year
 
@@ -339,8 +342,8 @@ def calculate_intrinsic_value(df):
     """
 
     df['Intrinsic Value'] = (df['Present Value of Discounted FCF'] + df['Terminal Value']
-                             + df['- Cash & Cash Equivalents'] - df['Total liabilities']) \
-                            / df['Number of Shares']
+                             + df['cashAndCashEquivalents'] - df['totalLiabilities']) \
+                            / df['numberOfShares']
 
     return df
 
@@ -358,7 +361,7 @@ def calculate_margin_of_safety(df, margin_of_safety=0.25):
     multiplier = 1 - margin_of_safety
     df['Margin of Safety Value'] = df['Intrinsic Value'] * multiplier
 
-    df['Buy Decision'] = np.where(df['Margin of Safety Value'] > df['Stock Price'], 'Yes', 'No')
+    df['Buy Decision'] = np.where(df['Margin of Safety Value'] > df['stockPrice'], 'Yes', 'No')
 
     return df
 
@@ -366,24 +369,24 @@ def calculate_margin_of_safety(df, margin_of_safety=0.25):
 def main():
     data = combine_data('data/', '10Y')
 
-    performance_stats = calculate_stats(data, 'median', 2019, 10, 'ROE')
+    performance_stats = calculate_stats(data, 'median', 2019, 10, 'roe')
 
     ttm_data = data[data.year == 2019]
     ttm_data = ttm_data.merge(performance_stats, on=['symbol', 'year'], how='inner')
 
-    screening_criteria = {'Debt to Equity': [0, 0.5],
-                          'Current ratio': [1.5, 10.0],
-                          'ROE': [0.10, 0.50],
-                          '10Y ROE Median': [0.08, 0.25],
-                          'Interest Coverage': [15, 5000]}
+    screening_criteria = {'debtToEquity': [0, 0.5],
+                          'currentRatio': [1.5, 10.0],
+                          'roe': [0.10, 0.50],
+                          '10Y roe median': [0.08, 0.25],
+                          'interestCoverage': [15, 5000]}
 
     qualified_stocks = screen_stocks(ttm_data, **screening_criteria)
     historical_data = data[data['symbol'].isin(qualified_stocks)]
     historical_performance_plots = plot_performance(historical_data, 2019, 10)
 
-    long_term_growth_estimates = {'GNTX': 0.05, 'DLB': 0.06}
+    long_term_growth_estimates = {'DLB': 0.06}
 
-    valuation_data = prepare_valuation_inputs(data, 2019, 10, 'GNTX', 'DLB')
+    valuation_data = prepare_valuation_inputs(data, 2019, 10, 'DLB')
 
     dcf_model_steps = [calculate_discount_rate, calculate_discounted_free_cash_flow,
                        calculate_terminal_value, calculate_intrinsic_value,
