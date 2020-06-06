@@ -93,7 +93,7 @@ def get_financial_data(df, request, period, api_key):
                 except KeyError:
                     continue
 
-                duplicate_cols = [x for x in statement_data if x.endswith('_x') or x.endswith('_y')]
+                duplicate_cols = [x for x in statement_data if x.endswith('_x')]
                 statement_data.drop(duplicate_cols, axis=1, inplace=True)
 
             financial_data = pd.concat([financial_data, statement_data], ignore_index=True)
