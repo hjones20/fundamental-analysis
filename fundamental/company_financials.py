@@ -87,7 +87,8 @@ def get_financial_data(df, request, period, api_key):
                 flattened_data = pd.json_normalize(data_json)
 
                 try:
-                    statement_data = statement_data.merge(flattened_data, on='symbol', how='inner')
+                    statement_data = statement_data.merge(flattened_data, on='symbol',
+                                                          how='inner', suffixes=('', '_x'))
 
                 except KeyError:
                     continue
