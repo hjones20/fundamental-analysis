@@ -1,23 +1,23 @@
+from fundamental import config
 from urllib.request import urlopen
+
 import json
 import pandas as pd
 
-pd.options.display.max_columns = 20
-pd.options.display.max_rows = 100
 
-
-def get_company_data():
+def get_company_data(api_key):
     """
     Retrieve all available company stocks from FinancialModelingPrep API.
 
+    :param api_key: FinancialModelingPrep API key
     :return: DataFrame containing 'symbol', 'name', 'price', and 'exchange' columns
     :rtype: pandas.DataFrame
     """
     print('Retrieving stock data from FinancialModelingPrep...')
 
-    response = urlopen("https://financialmodelingprep.com/api/v3/company/stock/list")
+    response = urlopen("https://financialmodelingprep.com/api/v3/stock/list?apikey=" + api_key)
     data = response.read().decode("utf-8")
-    data_json = json.loads(data)['symbolsList']
+    data_json = json.loads(data)
     flattened_data = pd.json_normalize(data_json)
 
     print('Found stock data on ' + str(flattened_data.symbol.nunique()) + ' companies! \n')
@@ -65,11 +65,12 @@ def select_minimum_price(df, min_price=5.00):
     return df
 
 
-def create_company_profile(df):
+def create_company_profile(df, api_key):
     """
     Map stock tickers to company information needed for screening stocks (industry, sector, etc.).
 
     :param df: DataFrame containing stock tickers (symbol) for N companies
+    :param api_key: FinancialModelingPrep API key
     :return: New DataFrame that maps the symbol column to additional company information
     :rtype: pandas.DataFrame
     """
@@ -79,36 +80,27 @@ def create_company_profile(df):
     profile_data = pd.DataFrame()
 
     for ticker in df['symbol']:
-        response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker)
+        response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker
+                           + "?apikey=" + api_key)
+
         data = response.read().decode("utf-8")
-
-        try:
-            data_json = json.loads(data)['profile']
-
-        except KeyError:
-            continue
-
+        data_json = json.loads(data)
         flattened_data = pd.json_normalize(data_json)
-        flattened_data.insert(0, 'symbol', ticker)
         profile_data = pd.concat([profile_data, flattened_data], ignore_index=True)
 
-    company_profile = profile_data[['symbol', 'companyName', 'sector', 'industry', 'exchange',
-                                    'ceo', 'description', 'website', 'mktCap', 'volAvg', 'beta',
-                                    'price']]
+    profile_data.to_csv('data/company-profiles.csv', index=False, header=True)
 
-    company_profile.to_csv('data/company-profiles.csv', index=False, header=True)
+    print('Found ' + str(profile_data.symbol.nunique()) + ' company profiles! \n')
 
-    print('Found ' + str(company_profile.symbol.nunique()) + ' company profiles! \n')
-
-    return company_profile
+    return profile_data
 
 
 def main():
-    raw_data = get_company_data()
+    raw_data = get_company_data(config.api_key)
     clean_data = raw_data.dropna()
     exchange_filter = select_stock_exchanges(clean_data)
     price_filter = select_minimum_price(exchange_filter, 1.00)
-    profile_data = create_company_profile(price_filter)
+    profile_data = create_company_profile(price_filter, config.api_key)
 
     return profile_data
 
