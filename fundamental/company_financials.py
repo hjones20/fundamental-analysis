@@ -1,9 +1,8 @@
+from fundamental import config
 from urllib.request import urlopen
+
 import json
 import pandas as pd
-
-pd.options.display.max_columns = 20
-pd.options.display.max_rows = 100
 
 
 def select_sector(df, *args):
@@ -18,7 +17,7 @@ def select_sector(df, *args):
     print('Evaluating sector membership among ' + str(df['symbol'].nunique()) + ' companies...')
 
     sector_filter = list(args)
-    df = df[df['sector'].isin(sector_filter)]
+    df = df[df['profile.sector'].isin(sector_filter)]
 
     print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + str(sector_filter)
           + ' sector! \n')
@@ -38,7 +37,7 @@ def select_industries(df, *args):
     print('Evaluating industry membership among ' + str(df['symbol'].nunique()) + ' companies...')
 
     industry_filter = list(args)
-    df = df[df['industry'].isin(industry_filter)]
+    df = df[df['profile.industry'].isin(industry_filter)]
 
     print('Found ' + str(df['symbol'].nunique()) + ' companies in the ' + str(industry_filter)
           + ' industries! \n')
@@ -46,13 +45,14 @@ def select_industries(df, *args):
     return df
 
 
-def get_financial_data(df, request, period):
+def get_financial_data(df, request, period, api_key):
     """
     Retrieve financial data for all stock tickers in the provided DataFrame.
 
     :param df: DataFrame containing stock tickers (symbol) for N companies
     :param request: String representing aspect of API to query
     :param period: String 'annual' or 'quarter'
+    :param api_key: FinancialModelingPrep API key
     :return: DataFrame containing chosen financial data for all years available
     :rtype: pandas.DataFrame
     """
@@ -61,9 +61,9 @@ def get_financial_data(df, request, period):
 
     request_map = {"financials": "financials",
                    "financial-ratios": "ratios",
-                   "enterprise-value": "enterpriseValues",
-                   "company-key-metrics": "metrics",
-                   "financial-statement-growth": "growth"}
+                   "enterprise-value": "enterprise-values",
+                   "company-key-metrics": "key-metrics",
+                   "financial-statement-growth": "financial-growth"}
 
     value_key = request_map[request]
 
@@ -78,19 +78,22 @@ def get_financial_data(df, request, period):
             statement_data = pd.DataFrame(df['symbol'])
 
             for statement in financial_statements:
-                response = urlopen("https://financialmodelingprep.com/api/v3/" + request + "/" +
-                                   statement + "/" + ticker + "?period=" + period)
+                response = urlopen("https://financialmodelingprep.com/api/v3/" + statement + "/"
+                                   + ticker + "?period=" + period + "&apikey=" + api_key)
+
                 data = response.read().decode("utf-8")
+                data_json = json.loads(data)
+
+                flattened_data = pd.json_normalize(data_json)
 
                 try:
-                    data_json = json.loads(data)[value_key]
+                    statement_data = statement_data.merge(flattened_data, on='symbol', how='inner')
 
                 except KeyError:
                     continue
 
-                flattened_data = pd.json_normalize(data_json)
-                flattened_data.insert(0, 'symbol', ticker)
-                statement_data = statement_data.merge(flattened_data)
+                duplicate_cols = [x for x in statement_data if x.endswith('_x') or x.endswith('_y')]
+                statement_data.drop(duplicate_cols, axis=1, inplace=True)
 
             financial_data = pd.concat([financial_data, statement_data], ignore_index=True)
 
@@ -100,18 +103,13 @@ def get_financial_data(df, request, period):
     else:
 
         for ticker in df['symbol']:
-            response = urlopen("https://financialmodelingprep.com/api/v3/" + request + "/" +
-                               ticker + "?period=" + period)
+            response = urlopen("https://financialmodelingprep.com/api/v3/" + value_key + "/"
+                               + ticker + "?period=" + period + "&apikey=" + api_key)
+
             data = response.read().decode("utf-8")
-
-            try:
-                data_json = json.loads(data)[value_key]
-
-            except KeyError:
-                continue
+            data_json = json.loads(data)
 
             flattened_data = pd.json_normalize(data_json)
-            flattened_data.insert(0, 'symbol', ticker)
             financial_data = pd.concat([financial_data, flattened_data], ignore_index=True)
 
         print('Found ' + period + ' ' + request + ' data for '
@@ -197,7 +195,7 @@ def main():
                     'company-key-metrics', 'enterprise-value']
 
     for request in request_list:
-        raw_data = get_financial_data(sector_companies, request, 'annual')
+        raw_data = get_financial_data(sector_companies, request, 'annual', config.api_key)
         clean_data = clean_financial_data(raw_data)
         subset_data = select_analysis_years(clean_data, 2019, 10)
         evaluation_period = subset_data.year.max() - subset_data.year.min()
@@ -209,4 +207,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
