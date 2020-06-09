@@ -116,25 +116,34 @@ def plot_stock_performance(df, report_year, eval_period):
     return historical_performance_plots
 
 
-    # # Everything below - calculate_intrinsic_value
-    # long_term_growth_estimates = {'DLB': 0.06}
-    #
-    # valuation_data = fundamentals.prepare_valuation_inputs(financial_data, report_year, eval_period,
-    #                                                        'DLB')
-    #
-    # dcf_model_steps = [fundamentals.calculate_discount_rate,
-    #                    fundamentals.calculate_discounted_free_cash_flow,
-    #                    fundamentals.calculate_terminal_value,
-    #                    fundamentals.calculate_intrinsic_value,
-    #                    fundamentals.calculate_margin_of_safety]
-    #
-    # for step in dcf_model_steps:
-    #     if step == fundamentals.calculate_discounted_free_cash_flow:
-    #         valuation_data = step(valuation_data, 10, **long_term_growth_estimates)
-    #     else:
-    #         valuation_data = step(valuation_data)
-    #
-    # print(valuation_data)
+def calculate_intrinsic_value(df, report_year, eval_period, long_term_growth_estimates, *args):
+    """
+
+    :param df:
+    :param report_year:
+    :param eval_period:
+    :param long_term_growth_estimates:
+    :param args:
+    :return:
+    :rtype: pandas.DataFrame
+    """
+
+    # Prepare data for DCF model calculations
+    valuation_data = fundamentals.prepare_valuation_inputs(df, report_year, eval_period, *args)
+    # See company_fundamentals.py to understand calculations, calculation order
+    dcf_model_steps = [fundamentals.calculate_discount_rate,
+                       fundamentals.calculate_discounted_free_cash_flow,
+                       fundamentals.calculate_terminal_value,
+                       fundamentals.calculate_intrinsic_value,
+                       fundamentals.calculate_margin_of_safety]
+
+    for step in dcf_model_steps:
+        if step == fundamentals.calculate_discounted_free_cash_flow:
+            valuation_data = step(valuation_data, eval_period, **long_term_growth_estimates)
+        else:
+            valuation_data = step(valuation_data)
+
+    return valuation_data
 
 
 if __name__ == '__main__':
@@ -160,3 +169,10 @@ if __name__ == '__main__':
 
     # Returns list of ggplot objects, add optional for loop to inspect graphs
     stability_graphs = plot_stock_performance(screened_stocks, 2019, 10)
+
+    stock_growth_estimates = {'DLB': 0.06, 'UNF': 0.05}
+
+    intrinsic_value_estimates = calculate_intrinsic_value(screened_stocks, 2019, 10,
+                                                          stock_growth_estimates, 'DLB', 'UNF')
+
+    print(intrinsic_value_estimates)
