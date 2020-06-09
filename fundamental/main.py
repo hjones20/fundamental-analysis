@@ -65,13 +65,15 @@ def get_company_financials(file_path, request_list, review_period, report_year, 
     return None
 
 
-def screen_stocks(dir_path, year_pattern, report_year, eval_period, criteria):
+def screen_stocks(dir_path, year_pattern, stat, col_list, report_year, eval_period, criteria):
     """
     Read financial data, calculate performance stats, and screen stocks accordingly.
 
     :param dir_path: Path to directory that contains csv files to be read in
     :param year_pattern: File name pattern indicating how many years of historical data the csv
            file should include
+    :param stat: Statistic to calculate on col in col_list ('mean', 'median', or 'percent change')
+    :param col_list: List of columns to calculate statistics for
     :param report_year: Year of most recent financial report desired
     :param eval_period: Number of years prior to most recent report to be analyzed (max = 10)
     :param criteria: Dictionary containing the column name and quantitative range desired for
@@ -80,24 +82,40 @@ def screen_stocks(dir_path, year_pattern, report_year, eval_period, criteria):
     :rtype: pandas.DataFrame
     """
 
+    # Read and join all csv files in the provided directory that match a specific pattern, ex: '10Y'
     financial_data = fundamentals.combine_data(dir_path, year_pattern)
-
-    performance_stats = fundamentals.calculate_stats(financial_data, 'median', report_year,
-                                                     eval_period, 'roe')
-
+    # Subset DataFrame to the trailing twelve months of data for screening purposes
     ttm_data = financial_data[financial_data.year == report_year]
-    ttm_data = ttm_data.merge(performance_stats, on=['symbol', 'year'], how='inner')
 
+    # Calculate the N-YEAR mean, median, or percent change of a given set of columns
+    for col in col_list:
+        performance_stats = fundamentals.calculate_stats(financial_data, stat, report_year,
+                                                         eval_period, col)
+        ttm_data = ttm_data.merge(performance_stats, on=['symbol', 'year'], how='inner')
+
+    # Subset DataFrame to stocks that meet the specified criteria
     qualified_companies = fundamentals.screen_stocks(ttm_data, **criteria)
     qualified_company_financials = financial_data[financial_data['symbol'].isin(qualified_companies)]
 
     return qualified_company_financials
 
 
-    # historical_performance_plots = fundamentals.plot_performance(plot_data, report_year,
-    #                                                              eval_period)
-    # # another function - plot stocks
-    #
+def plot_stock_performance(df, report_year, eval_period):
+    """
+    Plot the historical performance of selected stock tickers.
+
+    :param df: DataFrame containing stock tickers to include in line graphs
+    :param report_year: Year of most recent financial report desired
+    :param eval_period: Number of years prior to most recent report to be analyzed (max = 10)
+    :return: A list of ggplot objects
+    :rtype: List
+    """
+
+    historical_performance_plots = fundamentals.plot_performance(df, report_year, eval_period)
+
+    return historical_performance_plots
+
+
     # # Everything below - calculate_intrinsic_value
     # long_term_growth_estimates = {'DLB': 0.06}
     #
@@ -129,10 +147,16 @@ if __name__ == '__main__':
     get_company_financials('data/company-profiles.csv', financial_requests, 'annual', 2019, 10,
                            'data/', config.api_key)
 
+    columns_to_analyze = ['roe', 'currentRatio']
+
     screening_criteria = {'debtToEquity': [0, 0.5],
                           'currentRatio': [1.5, 10.0],
                           'roe': [0.10, 0.50],
                           '10Y roe median': [0.08, 0.25],
                           'interestCoverage': [15, 5000]}
 
-    screened_stocks = screen_stocks('data/', '10Y', 2019, 10, screening_criteria)
+    screened_stocks = screen_stocks('data/', '10Y', 'median', columns_to_analyze, 2019, 10,
+                                    screening_criteria)
+
+    # Returns list of ggplot objects, add optional for loop to inspect graphs
+    stability_graphs = plot_stock_performance(screened_stocks, 2019, 10)
