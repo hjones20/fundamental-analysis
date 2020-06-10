@@ -1,4 +1,3 @@
-from fundamental import config
 from urllib.request import urlopen
 
 import json
@@ -185,26 +184,3 @@ def select_analysis_years(df, report_year, eval_period):
 # TODO: Add logic to select specific quarters for analysis
 def select_analysis_quarters(df, report_year, eval_period, *args):
     pass
-
-
-def main():
-    company_profiles = pd.read_csv('data/company-profiles.csv')
-
-    sector_companies = select_sector(company_profiles, 'Consumer Cyclical')
-
-    request_list = ['financials', 'financial-ratios', 'financial-statement-growth',
-                    'company-key-metrics', 'enterprise-value']
-
-    for request in request_list:
-        raw_data = get_financial_data(sector_companies, request, 'annual', config.api_key)
-        clean_data = clean_financial_data(raw_data)
-        subset_data = select_analysis_years(clean_data, 2019, 10)
-        evaluation_period = subset_data.year.max() - subset_data.year.min()
-        filename = 'data/' + request + '-' + str(evaluation_period) + 'Y' + '.csv'
-        subset_data.to_csv(filename, index=False, header=True)
-
-    return None
-
-
-if __name__ == '__main__':
-    main()

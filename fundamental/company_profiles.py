@@ -1,4 +1,3 @@
-from fundamental import config
 from urllib.request import urlopen
 
 import json
@@ -93,17 +92,3 @@ def create_company_profile(df, api_key):
     print('Found ' + str(profile_data.symbol.nunique()) + ' company profiles! \n')
 
     return profile_data
-
-
-def main():
-    raw_data = get_company_data(config.api_key)
-    clean_data = raw_data.dropna()
-    exchange_filter = select_stock_exchanges(clean_data)
-    price_filter = select_minimum_price(exchange_filter, 1.00)
-    profile_data = create_company_profile(price_filter, config.api_key)
-
-    return profile_data
-
-
-if __name__ == '__main__':
-    main()

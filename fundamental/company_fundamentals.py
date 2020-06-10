@@ -7,9 +7,6 @@ import statistics
 import textwrap
 import os
 
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
-
 
 def combine_data(directory, year_pattern):
     """
@@ -69,7 +66,7 @@ def calculate_stats(df, stat, report_year, eval_period, *args):
 
     company_stats = pd.DataFrame()
 
-    for arg in args:
+    for arg in list(args):
 
         metric = df[['symbol', 'year', arg]]
         metric = metric.pivot_table(values=arg, index='symbol', columns='year')
@@ -141,7 +138,7 @@ def plot_performance(df, report_year, eval_period):
                                         'flows. Note: if the company\'s book value has increased '
                                         'over time, the EPS should demonstrate similar growth.',
 
-    # Commenting out for now, API isn't returning this col in income-statement response right now...
+    # Commenting out for now, API no longer returning this col in income-statement response
                   # 'Dividend per Share': 'This chart shows the dividend history of the company. '
                   #                       'This should have a flat to positive slope over time. If '
                   #                       'you see a drastic drop, it may represent a stock split '
@@ -364,42 +361,3 @@ def calculate_margin_of_safety(df, margin_of_safety=0.25):
     df['Buy Decision'] = np.where(df['Margin of Safety Value'] > df['stockPrice'], 'Yes', 'No')
 
     return df
-
-
-def main():
-    data = combine_data('data/', '10Y')
-
-    performance_stats = calculate_stats(data, 'median', 2019, 10, 'roe')
-
-    ttm_data = data[data.year == 2019]
-    ttm_data = ttm_data.merge(performance_stats, on=['symbol', 'year'], how='inner')
-
-    screening_criteria = {'debtToEquity': [0, 0.5],
-                          'currentRatio': [1.5, 10.0],
-                          'roe': [0.10, 0.50],
-                          '10Y roe median': [0.08, 0.25],
-                          'interestCoverage': [15, 5000]}
-
-    qualified_stocks = screen_stocks(ttm_data, **screening_criteria)
-    historical_data = data[data['symbol'].isin(qualified_stocks)]
-    historical_performance_plots = plot_performance(historical_data, 2019, 10)
-
-    long_term_growth_estimates = {'DLB': 0.06}
-
-    valuation_data = prepare_valuation_inputs(data, 2019, 10, 'DLB')
-
-    dcf_model_steps = [calculate_discount_rate, calculate_discounted_free_cash_flow,
-                       calculate_terminal_value, calculate_intrinsic_value,
-                       calculate_margin_of_safety]
-
-    for step in dcf_model_steps:
-        if step == calculate_discounted_free_cash_flow:
-            valuation_data = step(valuation_data, 10, **long_term_growth_estimates)
-        else:
-            valuation_data = step(valuation_data)
-
-    print(valuation_data)
-
-
-if __name__ == '__main__':
-    main()
