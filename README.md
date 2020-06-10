@@ -1,11 +1,18 @@
 # Fundamental Analysis
+Fundamental Analysis is a program that allows value investors to screen stocks for fundamental indicators and estimate the intrinsic value of chosen stocks using a Discounted Cash Flow method of valuation.
 
-Fundamental Analysis is a program that allows value investors to screen stocks for fundamental indicators and intrinsic value. 
+**The logic accomplishes 5 primary tasks:**
 
-# Prerequisites
+1. Downloads all stock tickers available via the FinancialModelingPrep API and generates profiles on each company
+2. Retrieves and cleans financial statement data on each company
+3. Screens companies on any chosen indicator of value (ex: 5-Year Median ROE)
+4. Plots the stability of core indicators over an N-year period
+    - "Core Indicators" include: EPS, Dividend Per Share, Book Value per Share, ROE, Current Ratio, Debt to Equity Ratio
+5. Estimates the intrinsic value, adjusted margin of safety value for chosen companies
+
+![alt text](https://github.com/hjones20/fundamental-analysis/blob/master/fundamental/images/EPS-scaled.png?raw=true)
+
+# References
 - All stock data is pulled from the FinancialModelingPrep API: https://financialmodelingprep.com/developer/docs/
-- In order to use this program effectively, you must have some familiarity with the basic principles of value investing. Learn more about value investing from the following online courses:
-
-  - **Value Investing: The Complete Financial Statement Analysis:** https://www.udemy.com/course/financial-statement-analysis-and-valuation/
-  
-  - **The Advanced Value Investing Course:** https://www.udemy.com/course/advanced-value-investing/
+- The "Stability Graph" concept was taken from the great folks at Buffet Books. You can find their explanation of the concept here: https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20/
+- References for the Discounted Cash Flow methodology of valuation can be found in many places across the internet. Personally, I used the following Udemy course: https://www.udemy.com/course/advanced-value-investing/
