@@ -65,19 +65,19 @@ def get_company_financials(file_path, request_list, review_period, report_year, 
     return None
 
 
-def screen_stocks(dir_path, year_pattern, stat, col_list, report_year, eval_period, criteria):
+def screen_stocks(dir_path, year_pattern, report_year, eval_period, criteria, stat, *args):
     """
     Read financial data, calculate performance stats, and screen stocks accordingly.
 
     :param dir_path: Path to directory that contains csv files to be read in
     :param year_pattern: File name pattern indicating how many years of historical data the csv
            file should include
-    :param stat: Statistic to calculate on col in col_list ('mean', 'median', or 'percent change')
-    :param col_list: List of columns to calculate statistics for
     :param report_year: Year of most recent financial report desired
     :param eval_period: Number of years prior to most recent report to be analyzed (max = 10)
     :param criteria: Dictionary containing the column name and quantitative range desired for
            that column
+    :param stat: Statistic to calculate on col in col_list ('mean', 'median', or 'percent change')
+    :param args: List of columns that statistical calculation should apply to
     :return: Subset of financial_data, containing only qualified stocks
     :rtype: pandas.DataFrame
     """
@@ -88,10 +88,9 @@ def screen_stocks(dir_path, year_pattern, stat, col_list, report_year, eval_peri
     ttm_data = financial_data[financial_data.year == report_year]
 
     # Calculate the N-YEAR mean, median, or percent change of a given set of columns
-    for col in col_list:
-        performance_stats = fundamentals.calculate_stats(financial_data, stat, report_year,
-                                                         eval_period, col)
-        ttm_data = ttm_data.merge(performance_stats, on=['symbol', 'year'], how='inner')
+    performance_stats = fundamentals.calculate_stats(financial_data, stat, report_year,
+                                                     eval_period, *args)
+    ttm_data = ttm_data.merge(performance_stats, on=['symbol', 'year'], how='inner')
 
     # Subset DataFrame to stocks that meet the specified criteria
     qualified_companies = fundamentals.screen_stocks(ttm_data, **criteria)
@@ -116,20 +115,24 @@ def plot_stock_performance(df, report_year, eval_period):
     return historical_performance_plots
 
 
-def calculate_intrinsic_value(df, report_year, eval_period, long_term_growth_estimates, *args):
+def calculate_intrinsic_value(df, report_year, eval_period, projection_window,
+                              long_term_growth_estimates, *args):
     """
+    Calculate the intrinsic value of the provided stock tickers.
 
-    :param df:
-    :param report_year:
-    :param eval_period:
-    :param long_term_growth_estimates:
-    :param args:
-    :return:
+    :param df: DataFrame containing N-years of historical company data
+    :param report_year: Year of most recent financial report desired
+    :param eval_period: Number of years prior to most recent report to be analyzed (max = 10)
+    :param projection_window: Number of years into the future we should generate projections for
+    :param long_term_growth_estimates: Estimated growth over N-year period
+    :param args: Stock tickers to generate intrinsic value estimates for
+    :return: DataFrame containing DCF model inputs, intrinsic value outputs, and a buy/no buy column
     :rtype: pandas.DataFrame
     """
 
     # Prepare data for DCF model calculations
     valuation_data = fundamentals.prepare_valuation_inputs(df, report_year, eval_period, *args)
+
     # See company_fundamentals.py to understand calculations, calculation order
     dcf_model_steps = [fundamentals.calculate_discount_rate,
                        fundamentals.calculate_discounted_free_cash_flow,
@@ -139,7 +142,7 @@ def calculate_intrinsic_value(df, report_year, eval_period, long_term_growth_est
 
     for step in dcf_model_steps:
         if step == fundamentals.calculate_discounted_free_cash_flow:
-            valuation_data = step(valuation_data, eval_period, **long_term_growth_estimates)
+            valuation_data = step(valuation_data, projection_window, **long_term_growth_estimates)
         else:
             valuation_data = step(valuation_data)
 
@@ -156,23 +159,21 @@ if __name__ == '__main__':
     get_company_financials('data/company-profiles.csv', financial_requests, 'annual', 2019, 10,
                            'data/', config.api_key)
 
-    columns_to_analyze = ['roe', 'currentRatio']
-
     screening_criteria = {'debtToEquity': [0, 0.5],
                           'currentRatio': [1.5, 10.0],
                           'roe': [0.10, 0.50],
                           '10Y roe median': [0.08, 0.25],
                           'interestCoverage': [15, 5000]}
 
-    screened_stocks = screen_stocks('data/', '10Y', 'median', columns_to_analyze, 2019, 10,
-                                    screening_criteria)
+    screened_stocks = screen_stocks('data/', '10Y', 2019, 10, screening_criteria, 'median',
+                                    'roe', 'currentRatio')
 
     # Returns list of ggplot objects, add optional for loop to inspect graphs
     stability_graphs = plot_stock_performance(screened_stocks, 2019, 10)
 
     stock_growth_estimates = {'DLB': 0.06, 'UNF': 0.05}
 
-    intrinsic_value_estimates = calculate_intrinsic_value(screened_stocks, 2019, 10,
+    intrinsic_value_estimates = calculate_intrinsic_value(screened_stocks, 2019, 10, 10,
                                                           stock_growth_estimates, 'DLB', 'UNF')
 
     print(intrinsic_value_estimates)
