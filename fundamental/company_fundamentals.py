@@ -132,13 +132,13 @@ def plot_performance(df, report_year, eval_period):
     df.sort_values(by=['symbol', 'year'], inplace=True, ascending=True)
     df.dropna(inplace=True)
 
+    # Commenting out for now, API no longer returning this col in income-statement response
     label_dict = {'Earnings per Share': 'The EPS shows the company\'s profit per share. This chart '
                                         'should have a positive slope over time. Stable results '
                                         'here are extremely important for forecasting future cash '
                                         'flows. Note: if the company\'s book value has increased '
                                         'over time, the EPS should demonstrate similar growth.',
 
-    # Commenting out for now, API no longer returning this col in income-statement response
                   # 'Dividend per Share': 'This chart shows the dividend history of the company. '
                   #                       'This should have a flat to positive slope over time. If '
                   #                       'you see a drastic drop, it may represent a stock split '
