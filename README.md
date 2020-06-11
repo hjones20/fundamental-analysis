@@ -1,5 +1,5 @@
 # Fundamental Analysis
-Fundamental Analysis is a program that allows me to screen stocks using fundamental indicators and estimate the intrinsic value of qualified stocks using a Discounted Cash Flow method of valuation.
+Fundamental Analysis is a program that allows me to screen stocks using fundamental indicators and estimate the intrinsic value of qualified stocks using the Discounted Cash Flow method of valuation.
 
 **The logic accomplishes 5 primary tasks:**
 
@@ -13,7 +13,7 @@ Fundamental Analysis is a program that allows me to screen stocks using fundamen
 ![alt text](https://github.com/hjones20/fundamental-analysis/blob/master/fundamental/images/EPS-scaled.png?raw=true)
 
 ## Functions
-I've listed the available functions separated by module below for anyone that wishes to build on this logic. Note that the FinancialModelingPrep API appears to be updated frequently and thus, data availability, functionality, or naming conventions may change. <br/>
+I've listed the available functions separated by module below for anyone that wishes to build upon this logic. Note that the FinancialModelingPrep API appears to be updated frequently and thus data availability, functionality, or naming conventions may change. <br/>
 - **company_profiles**
     - `get_company_data` - xxx
     - `select_stock_exchanges` - xxx
@@ -39,6 +39,6 @@ I've listed the available functions separated by module below for anyone that wi
 
 
 ## References
-- **Data Sources:** All stock data is pulled from the FinancialModelingPrep API: https://financialmodelingprep.com/developer/docs/ <br/><br/>
-- **Graphs:** The "Stability Graph" concept was taken from the great folks at https://www.buffettsbooks.com. You can find their explanation of the concept here: https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20 <br/> <br/>
-- **Calculations:** Guides to the Discounted Cash Flow method of valuation can be found in many places across the internet. Personally, I used the following Udemy course: https://www.udemy.com/course/advanced-value-investing 
+- **Data Sources:** All stock data is pulled from the <a href="https://financialmodelingprep.com/developer/docs/" target="_blank">FinancialModelingPrep API</a> <br/><br/>
+- **Graphs:** The "Stability Graph" concept was taken from the great folks at <a href="https://www.buffettsbooks.com/" target="_blank">www.buffettsbooks.com</a>. They explain why this concept is so important <a href="https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20" target="_blank">here</a> <br/> <br/>
+- **Calculations:** Guides to the Discounted Cash Flow method of valuation can be found in many places across the internet. Personally, I used the <a href="https://www.udemy.com/course/advanced-value-investing" target="_blank">Advanced Value Investing Udemy course</a> 
