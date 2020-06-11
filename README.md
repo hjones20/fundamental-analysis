@@ -39,6 +39,6 @@ I've listed the available functions separated by module below for anyone that wi
 
 
 ## References
-- **Data Sources:** All stock data is pulled from the <a href="https://financialmodelingprep.com/developer/docs/" target="_blank">FinancialModelingPrep API</a> <br/><br/>
-- **Graphs:** The "Stability Graph" concept was taken from the great folks at <a href="https://www.buffettsbooks.com/" target="_blank">www.buffettsbooks.com</a>. They explain why this concept is so important <a href="https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20" target="_blank">here</a> <br/> <br/>
+- **Data Sources:** All stock data is pulled from the <a href="https://financialmodelingprep.com/developer/docs/" target="_blank">FinancialModelingPrep API</a>
+- **Graphs:** The "Stability Graph" concept was taken from the great folks at <a href="https://www.buffettsbooks.com/" target="_blank">www.buffettsbooks.com</a>. They explain why this concept is so important <a href="https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20" target="_blank">here</a>
 - **Calculations:** Guides to the Discounted Cash Flow method of valuation can be found in many places across the internet. Personally, I used the <a href="https://www.udemy.com/course/advanced-value-investing" target="_blank">Advanced Value Investing Udemy course</a> 
