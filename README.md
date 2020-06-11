@@ -5,7 +5,7 @@ Fundamental Analysis is a program that allows value investors to screen stocks f
 
 1. Downloads all stock tickers available via the FinancialModelingPrep API and generates profiles on each company
 2. Retrieves and cleans financial statement data on each company
-3. Screens companies on any chosen indicator of value (ex: 5-Year Median ROE)
+3. Screens companies on any chosen indicators of value (ex: 5-Year Median ROE)
 4. Plots the stability of core indicators over an N-year period
     - "Core Indicators" include: EPS, Dividend Per Share, Book Value per Share, ROE, Current Ratio, Debt to Equity Ratio
 5. Estimates the intrinsic value, adjusted margin of safety value for chosen companies
