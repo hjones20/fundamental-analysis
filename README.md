@@ -1,5 +1,5 @@
 # Fundamental Analysis
-Fundamental Analysis is a program that allows value investors to screen stocks for fundamental indicators and estimate the intrinsic value of chosen stocks using a Discounted Cash Flow method of valuation.
+Fundamental Analysis is a program that allows me to screen stocks using fundamental indicators and estimate the intrinsic value of qualified stocks using a Discounted Cash Flow method of valuation.
 
 **The logic accomplishes 5 primary tasks:**
 
@@ -13,6 +13,6 @@ Fundamental Analysis is a program that allows value investors to screen stocks f
 ![alt text](https://github.com/hjones20/fundamental-analysis/blob/master/fundamental/images/EPS-scaled.png?raw=true)
 
 # References
-- All stock data is pulled from the FinancialModelingPrep API: https://financialmodelingprep.com/developer/docs/
-- The "Stability Graph" concept was taken from the great folks at Buffet Books. You can find their explanation of the concept here: https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20/
-- References for the Discounted Cash Flow methodology of valuation can be found in many places across the internet. Personally, I used the following Udemy course: https://www.udemy.com/course/advanced-value-investing/
+- All stock data is pulled from the FinancialModelingPrep API: https://financialmodelingprep.com/developer/docs/ <br/><br/>
+- The "Stability Graph" concept was taken from the great folks at https://www.buffettsbooks.com. You can find their explanation of the concept here: https://www.buffettsbooks.com/how-to-invest-in-stocks/intermediate-course/lesson-20 <br/> <br/>
+- References for the Discounted Cash Flow methodology of valuation can be found in many places across the internet. Personally, I used the following Udemy course: https://www.udemy.com/course/advanced-value-investing 
