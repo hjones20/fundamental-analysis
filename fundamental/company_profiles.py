@@ -64,11 +64,12 @@ def select_minimum_price(df, min_price=5.00):
     return df
 
 
-def create_company_profile(df, api_key):
+def create_company_profile(df, dir_path, api_key):
     """
     Map stock tickers to company information needed for screening stocks (industry, sector, etc.).
 
     :param df: DataFrame containing stock tickers (symbol) for N companies
+    :param dir_path: Specifies name of directory that csv files should be written to
     :param api_key: FinancialModelingPrep API key
     :return: New DataFrame that maps the symbol column to additional company information
     :rtype: pandas.DataFrame
@@ -87,7 +88,7 @@ def create_company_profile(df, api_key):
         flattened_data = pd.json_normalize(data_json)
         profile_data = pd.concat([profile_data, flattened_data], ignore_index=True)
 
-    profile_data.to_csv('data/company-profiles.csv', index=False, header=True)
+    profile_data.to_csv(dir_path + 'company-profiles.csv', index=False, header=True)
 
     print('Found ' + str(profile_data.symbol.nunique()) + ' company profiles! \n')
 

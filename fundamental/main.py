@@ -6,12 +6,13 @@ from fundamental import company_fundamentals as fundamentals
 import pandas as pd
 
 
-def prepare_company_profiles(price_filter, api_key):
+def prepare_company_profiles(price_filter, dir_path, api_key):
     """
     Build company profiles for stock tickers that meet price and exchange requirements.
     Reference: https://financialmodelingprep.com/developer/docs/#Company-Profile
 
     :param price_filter: The minimum stock price a user is willing to consider
+    :param dir_path: Specifies name of directory that csv files should be written to
     :param api_key: FinancialModelingPrep API key
     :return: None
     """
@@ -25,7 +26,7 @@ def prepare_company_profiles(price_filter, api_key):
     # Only retain stocks with a price greater than or equal to the provided price filter
     data = profiles.select_minimum_price(data, price_filter)
     # Retrieve company profile data for remaining stock tickers
-    profiles.create_company_profile(data, api_key)
+    profiles.create_company_profile(data, dir_path, api_key)
 
     return None
 
@@ -151,7 +152,7 @@ def calculate_intrinsic_value(df, report_year, eval_period, projection_window,
 
 if __name__ == '__main__':
 
-    prepare_company_profiles(10.00, config.api_key)
+    prepare_company_profiles(10.00, 'data/', config.api_key)
 
     financial_requests = ['financials', 'financial-ratios', 'financial-statement-growth',
                           'company-key-metrics', 'enterprise-value']
