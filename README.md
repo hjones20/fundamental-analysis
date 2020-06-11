@@ -13,11 +13,11 @@ Fundamental Analysis is a program that allows me to screen stocks using fundamen
 ![alt text](https://github.com/hjones20/fundamental-analysis/blob/master/fundamental/images/EPS-scaled.png?raw=true)
 
 ## Functions
-I've listed the available functions separated by module below for anyone that wishes to build upon this logic. <br/><br/>
+I've listed the available functions separated by module below for anyone that wishes to build upon this logic. <br/>
 
-##### Notes: 
+**Notes:**<br/>
 1. The FinancialModelingPrep API appears to be updated frequently and thus data availability, functionality, or naming conventions may change.
-2. It is not necessary to use the functions prefixed with the word 'calculate' in the company_fundamentals module in order to find the intrinsic value of a company. You can get a given company's discounted cash flow directly from the FinancialModeling Prep API <a href="https://financialmodelingprep.com/developer/docs/#Company-Discounted-cash-flow-value" target="_blank">here.</a> Likewise, FinancialModelingPrep offers a tutorial on Discounted Cash Flow Modeling <a href="https://financialmodelingprep.com/discounted-cash-flow" target="_blank">starting here.</a> I simply opted to build the DCF logic myself as I wanted to better understand how it worked.
+2. It is not necessary to use the functions prefixed with the word 'calculate' in the company_fundamentals module in order to calculate the intrinsic value of a company. You can get a given company's discounted cash flow directly from the FinancialModeling Prep API <a href="https://financialmodelingprep.com/developer/docs/#Company-Discounted-cash-flow-value" target="_blank">here.</a> Likewise, FinancialModelingPrep offers a tutorial on Discounted Cash Flow Modeling <a href="https://financialmodelingprep.com/discounted-cash-flow" target="_blank">starting here.</a> I simply opted to build the DCF logic myself as I wanted to better understand how it worked. Errors will result if column names change.
 
 - **company_profiles**
     - `get_company_data` - <a href="https://financialmodelingprep.com/developer/docs/#Symbols-List" target="_blank">Retrieves 'symbol', 'name', 'price', and 'exchange' information</a> for all available stock tickers
